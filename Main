@@ -595,13 +595,13 @@ class Player : public IDamageable {
         }
     }
 
-    void playCard(card* played_card, IDamageable* target, Deck<card*>& battlefield){
+    void playCard(card* played_card, IDamageable* target, Deck<card*>& battlefield, Player& enemyPlayer){
     for(auto it = hand.begin(); it != hand.end(); ++it){
         if((*it)->getPrivateCardId() == played_card->getPrivateCardId()){
             
-           this->attackTarget(*played_card, target, battlefield);  
+           this->attackTarget(played_card, target, battlefield, enemyPlayer);  
             
-           battlefield.push_back(played_card);
+           battlefield.addCardToDeck(played_card);
             hand.erase(it);
             break;
         }
