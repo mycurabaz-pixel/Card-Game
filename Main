@@ -1,0 +1,1182 @@
+#include<iostream>
+#include<stack>
+#include<random>
+#include<map>
+#include <functional>
+#include<memory> // for smart pointers
+#include<algorithm>//for std::shuffle
+
+
+//====================
+//1.FOWARD DECLARATIONS
+//====================
+
+class Player;
+template <typename T> class Deck;
+
+
+//========
+//INTERFACE
+//========
+
+
+class IDamageable {
+public:
+    virtual void takeDamage(int dmg) = 0;
+    virtual std::string getName() = 0;
+    virtual int getHealth() = 0;
+    virtual ~IDamageable() = default;   
+};
+
+template <typename T>
+class Deck{
+
+    private:
+
+    std::vector<T> active_deck;
+    std::vector<T> deck;
+
+    public:
+
+    void addCardToDeck(T item){
+        deck.push_back(item);
+    }
+
+    void removeCardFromDeck(T target_card){
+        for(auto it= deck.begin(); it != deck.end(); ++it){
+            if((*it)->getPrivateCardId() == target_card->getPrivateCardId()){
+                deck.erase(it);
+                break;
+            }
+        }
+    }
+
+    void shuffle(){
+        active_deck = deck;
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::shuffle(active_deck.begin(), active_deck.end(), gen);
+    }
+
+    T getTopCard(){
+        if(!active_deck.empty()){
+        return active_deck.back();
+        }
+        return nullptr;
+    }
+
+    void removeTopCard(){
+        if(!active_deck.empty()){
+            active_deck.pop_back();
+        }
+    }
+
+    bool isEmpty(){
+        return active_deck.empty();
+    }
+
+    const std::vector<T>& getCards() const {
+    return deck;
+}
+
+};
+
+class card : public IDamageable{
+
+    public: 
+
+    enum DmgType{
+        ICE,
+        FIRE,
+        NATURE,
+        WIND,
+        MAGIC,
+        ANTIMAGIC,
+        DARKNESS,
+        LIGHT,
+        SLICE,
+        NORMAL
+    };
+
+    private: 
+
+    int health;
+    inline static int id_counter = 1;
+    int private_card_id;
+    int private_deck_id;
+    int range;
+    DmgType dmgType;
+    int type;
+    std::string cardName;
+    int cost;
+    int dmgHit;
+
+    public:
+
+    card(int range, DmgType dmgType, int type, std::string cardName, int cost, int dmgHit, int health){
+        this->range = range;
+        this->dmgType = dmgType;
+        this->type = type;
+        this->cardName = cardName;
+        this->cost = cost;
+        this->dmgHit=dmgHit;
+        private_card_id = id_counter;
+        id_counter++;
+        this->health = health;
+    }
+
+    int getDamageType(){
+        return dmgType;
+    }
+
+    int getPrivateCardId(){
+        return private_card_id;
+    }
+
+    int getType(){
+        return type;
+    }
+
+    int getCost(){
+        return cost;
+    }
+         
+    void updateDmgHit(int dmgHit){
+        this->dmgHit = dmgHit;
+    }
+
+    int getDmgHit(){
+        return dmgHit;
+    }
+
+    void takeDamage(int dmg) override {
+        health -= dmg;
+    }
+
+    int getHealth(){
+        return health;
+    }
+
+    std::string getName() override {
+        return cardName;
+    }
+
+    virtual ~card(){
+        std::cout<<"card has been killed"<<std::endl;
+    }
+
+    virtual void hit(IDamageable* target) = 0;
+
+    virtual void useUniquePower(Player& enemyplayer, Deck<card*>& battlefield, card* targetCard) = 0;
+
+    virtual void activateTypeBuff() = 0;
+
+};
+
+class fantasyCard : public card {
+
+    public:
+
+    enum FantasyType{
+        DRAGON,
+        SOLDIER,
+        MAGICIAN,
+        HEALER
+    };
+
+    using AbilityFunction = std::function<void(Player& enemyPlayer, Deck<card*>& battlefield, card* targetCard)>;
+
+    private:
+
+    std::string unique_ability;
+    int unique_ability_effect_power;
+    FantasyType fType;
+    int unique_dmg_buff=0;
+    AbilityFunction uniquePower;
+
+     public:
+
+    fantasyCard(int range, DmgType dmgType, FantasyType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, AbilityFunction  power)
+    : card(range, dmgType, type, cardName, cost, dmgHit, health){
+
+        this->unique_ability = unique_ability;
+        this->unique_ability_effect_power = unique_ability_effect_power;
+        this->fType = type;
+        this->uniquePower = power;
+    }
+
+    void random_unique_dmg(){
+         std::random_device rd;
+
+         std::mt19937 gen(rd());
+
+         std::uniform_int_distribution<> interval_1(0, (card::getCost() * 2));
+
+         unique_dmg_buff = interval_1(gen);
+
+         card::updateDmgHit(card::getDmgHit() + unique_dmg_buff);
+    }
+
+    void hit(IDamageable* target) override {
+        random_unique_dmg();
+    
+    target->takeDamage(card::getDmgHit()); 
+
+    std::cout << card::getName() << ", " << target->getName() << " hedefine " << card::getDmgHit() << " vurdu!" << std::endl;
+
+    if(unique_dmg_buff > card::getCost()/2){
+        std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
+
+            switch(card::getDamageType()){
+
+                case ICE:
+
+                std::cout<<"düşman donduruldu"<<std::endl;
+                break;
+
+                case FIRE:
+
+                std::cout<<"düşman yakıldı"<<std::endl;
+               target->takeDamage(2);
+                break;
+
+                case NATURE:
+
+                std::cout<<"ENEMY HAS BEEN ROOTED"<<std::endl;
+                break;
+
+                case WIND:
+
+                std::cout<<"ENEMY HAS BEEN SLICED WİTH WİND"<<std::endl;
+                 target->takeDamage(card::getDmgHit());
+
+                break;
+
+                case MAGIC:
+
+                std::cout<<"YOU HİT EXTRA MAGIC DAMAGE AND GAINED 2 MANA"<<std::endl;
+                target->takeDamage(card::getDmgHit());
+                break;
+
+                case ANTIMAGIC:
+
+                std::cout<<"YOU HİT EXTRA ANTIMAGIC DAMAGE AND WASTED ENEMY'S 2 MANA"<<std::endl;
+                 target->takeDamage(card::getDmgHit());
+                break;
+
+                case DARKNESS:
+
+                std::cout<<"ENEMY BECAME FEARED"<<std::endl;
+                break;
+
+                case LIGHT:
+
+                std::cout<<"ENEMY BECAME BLİND"<<std::endl;
+                break;
+
+                case SLICE:
+
+                std::cout<<"ENEMY STARTED BLEEDİNG "<<std::endl;
+                 target->takeDamage(2);
+                break;
+
+                case NORMAL:
+
+                break;
+            }
+        }
+        card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
+    }
+
+    void useUniquePower(Player& enemyPlayer, Deck<card*>& battlefield, card* targetCard) override {
+       if(uniquePower){
+        uniquePower(enemyPlayer, battlefield);
+       }
+    }
+
+    void activateTypeBuff() override {
+        std::cout<<"healing every fantasy card on the table and giving extra "<<card::getCost()<<"damage"<<std::endl;
+    }
+
+};
+
+
+class TechCard : public card{
+
+    public:
+
+    enum TechnoType{
+        ROBOT,
+        MECHANIC,
+        SOLDIER,
+        TITAN
+    };
+
+    using AbilityFunction = std::function<void(Player& enemyPlayer, Deck<card*>& battlefield, card* targetCard)>;
+
+    private:
+
+    std::string unique_ability;
+    int unique_ability_effect_power;
+    TechnoType tType;
+    int unique_dmg_buff=0;
+    AbilityFunction uniquePower;
+
+    public:
+
+    TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, AbilityFunction power)
+        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health) {
+        this->unique_ability = unique_ability;
+        this->unique_ability_effect_power = unique_ability_effect_power;
+        this->tType = type;
+        this->uniquePower = power;
+    }
+
+    void random_unique_dmg(){
+         std::random_device rd;
+
+         std::mt19937 gen(rd());
+
+         std::uniform_int_distribution<> interval_1(0, (card::getCost() * 2));
+
+         unique_dmg_buff = interval_1(gen);
+
+         card::updateDmgHit(card::getDmgHit() + unique_dmg_buff);
+    }
+
+    void hit(IDamageable* target) override {
+        random_unique_dmg();
+    
+    target->takeDamage(card::getDmgHit());  
+
+    if(unique_dmg_buff > card::getCost()/2){
+        std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
+
+            switch(card::getDamageType()){
+
+                case ICE:
+
+                std::cout<<"düşman donduruldu"<<std::endl;
+                break;
+
+                case FIRE:
+
+                std::cout<<"düşman yakıldı"<<std::endl;
+               target->takeDamage(2);
+                break;
+
+                case NATURE:
+
+                std::cout<<"ENEMY HAS BEEN ROOTED"<<std::endl;
+                break;
+
+                case WIND:
+
+                std::cout<<"ENEMY HAS BEEN SLICED WİTH WİND"<<std::endl;
+                 target->takeDamage(card::getDmgHit());
+
+                break;
+
+                case MAGIC:
+
+                std::cout<<"YOU HİT EXTRA MAGIC DAMAGE AND GAINED 2 MANA"<<std::endl;
+                target->takeDamage(card::getDmgHit());
+                break;
+
+                case ANTIMAGIC:
+
+                std::cout<<"YOU HİT EXTRA ANTIMAGIC DAMAGE AND WASTED ENEMY'S 2 MANA"<<std::endl;
+                 target->takeDamage(card::getDmgHit());
+                break;
+
+                case DARKNESS:
+
+                std::cout<<"ENEMY BECAME FEARED"<<std::endl;
+                break;
+
+                case LIGHT:
+
+                std::cout<<"ENEMY BECAME BLİND"<<std::endl;
+                break;
+
+                case SLICE:
+
+                std::cout<<"ENEMY STARTED BLEEDİNG "<<std::endl;
+                 target->takeDamage(2);
+                break;
+
+                case NORMAL:
+
+                break;
+            }
+        }
+        card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
+    }
+
+    void useUniquePower(Player& enemyPlayer, Deck<card*>& battlefield, card* targetCard) override {
+       if(uniquePower){
+        uniquePower(enemyPlayer, battlefield);
+       }
+    }
+
+    void activateTypeBuff() override{
+        cout<<"Every tech card on the table gets high voltage extra "<<card::getCost()/2<<"extra electrical damage"<<endl;
+    }
+};
+
+class SeaSonCard: public card {
+
+    public:
+
+    enum SeaSonType{
+        KRAKEN,
+        MEDIC,
+        PIRATE,
+        ORACLE
+    };
+
+    using AbilityFunction = std::function<void(Player& enemyPlayer, Deck<card*>& battlefield, card* targetCard)>;
+
+    private:
+
+    std::string unique_ability;
+    int unique_ability_effect_power;
+    SeaSonType sType;
+    int unique_dmg_buff=0;
+    AbilityFunction uniquePower;
+
+    public:
+
+    SeaSonCard(int range, DmgType dmgType, SeaSonType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, AbilityFunction power)
+        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health) {
+        this->unique_ability = unique_ability;
+        this->unique_ability_effect_power = unique_ability_effect_power;
+        this->sType = type;
+        this->uniquePower = power;
+    }
+
+    void random_unique_dmg(){
+         std::random_device rd;
+
+         std::mt19937 gen(rd());
+
+         std::uniform_int_distribution<> interval_1(0, (card::getCost() * 2));
+
+         unique_dmg_buff = interval_1(gen);
+
+         card::updateDmgHit(card::getDmgHit() + unique_dmg_buff);
+    }
+
+     void hit(IDamageable* target) override {
+        random_unique_dmg();
+    
+    target->takeDamage(card::getDmgHit());  
+
+    if(unique_dmg_buff > card::getCost()/2){
+        std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
+
+           switch(card::getDamageType()){
+
+                case ICE:
+
+                std::cout<<"düşman donduruldu"<<std::endl;
+                break;
+
+                case FIRE:
+
+                std::cout<<"düşman yakıldı"<<std::endl;
+               target->takeDamage(2);
+                break;
+
+                case NATURE:
+
+                std::cout<<"ENEMY HAS BEEN ROOTED"<<std::endl;
+                break;
+
+                case WIND:
+
+                std::cout<<"ENEMY HAS BEEN SLICED WİTH WİND"<<std::endl;
+                 target->takeDamage(card::getDmgHit());
+
+                break;
+
+                case MAGIC:
+
+                std::cout<<"YOU HİT EXTRA MAGIC DAMAGE AND GAINED 2 MANA"<<std::endl;
+                target->takeDamage(card::getDmgHit());
+                break;
+
+                case ANTIMAGIC:
+
+                std::cout<<"YOU HİT EXTRA ANTIMAGIC DAMAGE AND WASTED ENEMY'S 2 MANA"<<std::endl;
+                 target->takeDamage(card::getDmgHit());
+                break;
+
+                case DARKNESS:
+
+                std::cout<<"ENEMY BECAME FEARED"<<std::endl;
+                break;
+
+                case LIGHT:
+
+                std::cout<<"ENEMY BECAME BLİND"<<std::endl;
+                break;
+
+                case SLICE:
+
+                std::cout<<"ENEMY STARTED BLEEDİNG "<<std::endl;
+                 target->takeDamage(2);
+                break;
+
+                case NORMAL:
+
+                break;
+            }
+        }
+        card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
+    }
+
+     void useUniquePower(Player& enemyPlayer, Deck<card*>& battlefield, card* targetCard) override {
+       if(uniquePower){
+        uniquePower(enemyPlayer, battlefield);
+       }
+    }
+
+    void activateTypeBuff() override{
+        std::cout<<"Every sea son card on the table gets extra "<<card::getCost()/2<<"damage to marked enemies"<<std::endl;
+    }
+
+};
+
+
+class Player : public IDamageable {
+
+    private:
+
+    std::string player_name;
+    int health = 1000;
+    inline static int playerId = 1;
+    Deck<card*> yourDeck;
+    std::vector<card*> hand;
+
+    public:
+
+    Player(std::string name) : player_name(name) {}
+
+    int getHealth() override{
+        return health;
+    }
+
+    std::string getName() override {
+        return player_name;
+    }
+
+    void addCardToPlayerDeck(card* c){
+        yourDeck.addCardToDeck(c);
+    }
+
+    void takeDamage(int dmg) override {
+        health -= dmg;
+    }
+
+    void drawCard(){
+        if(!yourDeck.isEmpty()){
+            card* drawnCard = yourDeck.getTopCard();
+
+            hand.push_back(drawnCard);
+
+            yourDeck.removeTopCard();
+
+            std::cout<<player_name<<"has drawn a card."<<std::endl;
+        }
+        else{
+            std::cout<<"Deck is empty, cant drawn a card!"<<std::endl;
+        }
+    }
+
+    void playCard(card* played_card, IDamageable* target, Deck<card*>& battlefield){
+    for(auto it = hand.begin(); it != hand.end(); ++it){
+        if((*it)->getPrivateCardId() == played_card->getPrivateCardId()){
+            
+           this->attackTarget(*played_card, target, battlefield);  
+            
+           battlefield.push_back(played_card);
+            hand.erase(it);
+            break;
+        }
+    }
+}
+
+    void shuffleDeck(){
+        yourDeck.shuffle();
+    }
+
+    card* selectCard(){
+        int i = 0;
+        int selection;
+        for(card* c: hand){
+            std::cout<<i++<<".card "<<c->getName()<<std::endl;
+        }
+        std::cout<<"seçiminiz:"<<std::endl;
+        std::cin>>selection;
+        return hand.at(selection);
+    }
+
+    // Bir kartın başka bir karta saldırmasını ve ölüm kontrolünü yöneten fonksiyon
+    void attackTarget(card* attacker, IDamageable* target, Deck<card*>& battlefield, Player& enemyPlayer) {
+
+        attacker->hit(target);
+
+        Player* targetAsPlayer = dynamic_cast<Player*>(target);
+        card* targetAsCard = dynamic_cast<card*>(target);
+
+        if (targetAsPlayer != nullptr) {
+        // Hedef bir Oyuncu ise:
+        // İlk parametreye hedeflenen oyuncuyu veriyoruz, hedef kart olmadığı için nullptr geçiyoruz
+        attacker->useUniquePower(*targetAsPlayer, battlefield, nullptr);
+    } 
+    else if (targetAsCard != nullptr) {
+        // Hedef bir Kart ise:
+        // Kart yetenekleri kural gereği enemyPlayer referansı da beklediği için,
+        // fonksiyona dışarıdan gelen enemyPlayer'ı ve hedef alınan kartı (targetAsCard) iletiyoruz
+        attacker->useUniquePower(enemyPlayer, battlefield, targetAsCard);
+    }
+
+        //Death control
+        if (target->getHealth() <= 0) {
+            std::cout << target->getName() << "died!" << std::endl;
+
+            //By using C++ RTTI (RunTime Type Information) to understand if the target is card or player and only if it's a card we erase from battlefield
+            card* deadCard = dynamic_cast<card*>(target);
+            if(deadCard != nullptr){
+            battlefield.removeCardFromDeck(deadCard);
+            }
+            else{
+                std::cout<<"GAME OVER!!! " <<target->getName()<<" has been defeated."<<std::endl;
+            }
+        }
+    }
+
+};
+
+class gameManager{
+    Deck<card*> master_deck;
+    Deck<card*> battle_field;
+    Player player1{"player1"};
+    Player player2{"player2"};
+
+    private:
+     gameManager(){}
+
+    public:
+
+    static gameManager& getInstance() { static gameManager instance; return instance; }
+
+    gameManager(const gameManager&) = delete;
+    gameManager& operator=(const gameManager) = delete;
+
+    void setPlayers(std::string player1_name, std::string player2_name){
+        player1 = Player(player1_name);
+         player2 = Player(player2_name);
+    }
+
+void startGame() {
+    // ==========================================
+    // 20 FANTASY CARDS (With Lambda Abilities)
+    // ==========================================
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::FIRE, fantasyCard::FantasyType::DRAGON, "Flame Dragon", 7, 45, "Breath", 20, 300, 
+        [](Player& enemyPlayer, Deck<card*>& pitch, card* targetCard) {
+            std::cout << "-> Ability: Set the battlefield on fire!" << std::endl;
+            for(card* c: pitch.getCards()) {
+                c->takeDamage(2);
+            }
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::FIRE, fantasyCard::FantasyType::DRAGON, "Red Dragon", 6, 40, "Breath", 18, 400, 
+        [](Player& enemyPlayer, Deck<card*>& pitch, card* targetCard) { 
+            std::cout << "-> Ability: Shot a critical ember!" << std::endl; 
+            if(targetCard != nullptr){
+            targetCard->takeDamage(18);
+            }
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        2, card::DmgType::ICE, fantasyCard::FantasyType::HEALER, "Ice Healer", 3, 10, "Polar", 15, 50, 
+        [](Player& enemyPlayer, Deck<card*>& pitch, card* targetCard) { 
+            std::cout << "-> Ability: Healed ally cards by freezing them!" << std::endl;
+           if(targetCard != nullptr){
+            targetCard->takeDamage(-20);
+            }
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        2, card::DmgType::ICE, fantasyCard::FantasyType::HEALER, "Frost Guardian", 3, 12, "Polar", 12, 70,
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Granted ice shields to everyone!" << std::endl; 
+            for(card* c: pitch.getCards()) {
+                c->takeDamage(-5);
+            }
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Cruel Soldier", 4, 30, "Dance", 10, 30, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Sword speed doubled!" << std::endl;
+            if(targetCard != nullptr){
+                targerCard->takeDamage(35);
+            } 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Dawn Knight", 4, 35, "Dance", 8, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Struck with a strike of justice!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        3, card::DmgType::MAGIC, fantasyCard::FantasyType::MAGICIAN, "Ancient Mage", 6, 25, "Meteor", 35, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Rained meteors from the sky!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        3, card::DmgType::MAGIC, fantasyCard::FantasyType::MAGICIAN, "Sky Mage", 5, 22, "Meteor", 25, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Broke magic resistance!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        2, card::DmgType::NATURE, fantasyCard::FantasyType::SOLDIER, "Forest Guardian", 5, 28, "Vine Trap", 12, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Rooted enemies with vines!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        2, card::DmgType::NATURE, fantasyCard::FantasyType::HEALER, "Dryad", 2, 8, "Vine Trap", 10, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Called upon Mother Nature's blessing!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::WIND, fantasyCard::FantasyType::DRAGON, "Storm Dragon", 7, 42, "Breath", 22, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Created a hurricane!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        3, card::DmgType::DARKNESS, fantasyCard::FantasyType::MAGICIAN, "Dark Mage", 6, 27, "Meteor", 30, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Cast life drain!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        2, card::DmgType::LIGHT, fantasyCard::FantasyType::HEALER, "Light Priest", 4, 14, "Polar", 20, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Blinded everything with light!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::NORMAL, fantasyCard::FantasyType::SOLDIER, "Village Vanguard", 1, 15, "Dance", 5, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Performed a simple but effective headbutt!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        2, card::DmgType::ANTIMAGIC, fantasyCard::FantasyType::MAGICIAN, "Spellbreaker", 5, 20, "Meteor", 15, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Cleared all spells in the area!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::FIRE, fantasyCard::FantasyType::SOLDIER, "Ember Guardian", 3, 25, "Dance", 8, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Infused weapon with fire!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        3, card::DmgType::ICE, fantasyCard::FantasyType::MAGICIAN, "Cryomancer", 5, 24, "Meteor", 22, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Started a blizzard!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        2, card::DmgType::WIND, fantasyCard::FantasyType::HEALER, "Wind Healer", 3, 11, "Polar", 14, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Cleared poison with wind!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::DARKNESS, fantasyCard::FantasyType::DRAGON, "Shadow Dragon", 8, 50, "Breath", 25, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Cast dark fear!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Barbarian", 4, 32, "Dance", 11, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Entered rage mode!" << std::endl; 
+        }
+    ));
+
+    // ==========================================
+    // 20 TECH CARDS (With Lambda Abilities)
+    // ==========================================
+    master_deck.addCardToDeck(new TechCard(
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Cyber Observer", 4, 22, "Laser", 18, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Locked onto the target!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Laser Warrior", 4, 25, "Laser", 15, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Fired a plasma ball!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Chief Engineer", 3, 15, "Turret", 5, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Deployed an automatic turret!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Blacksmith Robot", 3, 12, "Turret", 8, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Repaired armor!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Pulse Guardian", 5, 32, "Shield", 25, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Emitted an electromagnetic wave!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Cyber Protector", 4, 28, "Shield", 20, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Activated firewall shield!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Doomsday Tank", 8, 55, "Shock", 40, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Fired a nuclear missile!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Goliath V2", 8, 58, "Shock", 35, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Pierced through with a railgun!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Light Drone", 2, 12, "Wave", 8, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Activated the signal jammer!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Swift Jet", 3, 18, "Wave", 12, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Caused a supersonic blast!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        2, card::DmgType::FIRE, TechCard::TechnoType::MECHANIC, "Pyro-Technician", 4, 20, "Turret", 15, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Launched a napalm bomb!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        1, card::DmgType::ICE, TechCard::TechnoType::SOLDIER, "Freezing Android", 4, 26, "Shield", 14, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Sprayed liquid nitrogen!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        2, card::DmgType::NATURE, TechCard::TechnoType::ROBOT, "Bio-Mechanical Golem", 5, 30, "Laser", 22, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Activated organic batteries!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        3, card::DmgType::MAGIC, TechCard::TechnoType::TITAN, "Rune Circuit", 7, 40, "Shock", 30, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Triggered a magical overload!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        1, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Saw Robot", 3, 24, "Shield", 10, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Overclocked the blades!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Quantum Reflector", 5, 23, "Laser", 16, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Bent light to become invisible!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Repair Unit", 2, 10, "Turret", 12, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Started repairs with nanobots!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        2, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Dark Matter Armor", 9, 60, "Shock", 45, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Created a black hole!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Sonic Copter", 3, 15, "Wave", 10, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Blew away with propeller wind!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new TechCard(
+        2, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Cybernetic Ninja", 4, 34, "Shield", 18, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Emitted a katana shockwave!" << std::endl; 
+        }
+    ));
+
+    // ==========================================
+    // 20 SEA SON CARDS (With Lambda Abilities)
+    // ==========================================
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Nightmare Kraken", 9, 60, "Vortex", 50, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Cast a deep sea curse!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Leviathan", 9, 65, "Vortex", 45, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Started a tsunami!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Coral Healer", 3, 8, "Wave", 18, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Active coral healing!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Mermaid", 3, 9, "Wave", 16, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Sang the current song!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Blackbeard", 4, 35, "Blast", 14, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Executed a boarding attack!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Captain Barbarossa", 5, 38, "Blast", 12, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Subjected the fleet to cannon fire!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Sea Oracle", 5, 20, "Deluge", 30, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Saw the storm of the future!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Siren Song", 4, 18, "Deluge", 25, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Charmed the enemy card!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::PIRATE, "Arctic Raider", 4, 27, "Anchor", 11, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Fired a frozen harpoon!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::KRAKEN, "Frozen Giant Octopus", 7, 44, "Vortex", 28, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Threw an ice sheet with tentacles!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Pirate Cannoneer", 4, 33, "Blast", 15, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Used Greek fire!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        3, card::DmgType::WIND, SeaSonCard::SeaSonType::ORACLE, "Stormbringer", 5, 21, "Deluge", 22, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Blew a capsizing wind!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::LIGHT, SeaSonCard::SeaSonType::MEDIC, "Sea Glow Sprite", 3, 10, "Wave", 20, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Blinded with a night glow!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::NORMAL, SeaSonCard::SeaSonType::PIRATE, "Ship Crew", 1, 12, "Blast", 4, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Threw a rum bottle!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::ANTIMAGIC, SeaSonCard::SeaSonType::ORACLE, "Deepwater Guardian", 6, 26, "Deluge", 18, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Will drown the magic shield in a vortex!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::KRAKEN, "Razor Tentacle", 6, 40, "Vortex", 20, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Sharp tentacle slash!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::MEDIC, "Glacial Savior", 4, 12, "Wave", 14, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Performed cold water shock therapy!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        3, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::ORACLE, "Abyss Witch", 5, 22, "Deluge", 26, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Mariana trench darkness!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Lava Captain", 5, 36, "Blast", 16, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Volcanic pirate attack!" << std::endl; 
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        2, card::DmgType::WIND, SeaSonCard::SeaSonType::MEDIC, "Monsoon Healer", 3, 11, "Wave", 12, 
+        [](Player& enemyPlayer, Deck<card*>& pitch) { 
+            std::cout << "-> Ability: Humid storm healing!" << std::endl; 
+        }
+    ));
+
+    master_deck.shuffle();
+
+    for (int i = 0; i < 30; ++i) {
+        if (!master_deck.isEmpty()) {
+            player1.addCardToPlayerDeck(master_deck.getTopCard());
+            master_deck.removeTopCard();
+        }
+        if (!master_deck.isEmpty()) {
+            player2.addCardToPlayerDeck(master_deck.getTopCard());
+            master_deck.removeTopCard();
+        }
+    }
+
+    player1.shuffleDeck();
+    player2.shuffleDeck();
+   
+    std::cout << "--- Desteler Hazirlandi ve Karistirildi (Her oyuncuda 30 kart var) ---\n" << std::endl;
+}
+
+    void playTurn(){
+        std::cout << "--------------------------\n" << std::endl;
+        std::cout<<"--- Card Drawing Phase ---"<<std::endl;
+
+        player1.drawCard();
+        player2.drawCard();
+
+        card* p1_card = player1.selectCard();
+        if(p1_card != nullptr){
+            std::cout<<player1.getName()<<"is playing..."<<std::endl;
+            player1.playCard(p1_card, player2, battle_field);
+            battle_field.addCardToDeck(p1_card);
+        }
+
+        card* p2_card = player2.selectCard();
+        if(p2_card != nullptr){
+            std::cout<<"\n"<<player2.getName()<<" is playing..."<<std::endl;
+            player2.playCard(p2_card, player1, battle_field);
+            battle_field.addCardToDeck(p2_card);
+        }
+
+    }
+
+};
+
+int main() {
+
+    gameManager::getInstance().setPlayers("Geralt", "Yennefer");
+
+    gameManager::getInstance().startGame();
+
+    gameManager::getInstance().playTurn();
+
+    return 0;
+};
