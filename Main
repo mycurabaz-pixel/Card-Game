@@ -16,9 +16,9 @@ template <typename T> class Deck;
 
 struct Effect
 {
-    int damage;
-    int duration;
-    int playedTour;
+    int damage = 2;
+    int duration = 3;
+    int playedTour = 0;
 };
 
 
@@ -119,13 +119,14 @@ class card : public IDamageable{
     std::string cardName;
     int cost;
     int dmgHit;
-    std::map<std::string, Effect> effects;
+    std::map<DmgType, Effect> effects;
     Effect hitEffect;
-    std::string effectName;
+    DmgType immunity;
+    DmgType vulnurability;
 
     public:
 
-    card(int range, DmgType dmgType, int type, std::string cardName, int cost, int dmgHit, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn){
+    card(int range, DmgType dmgType, int type, std::string cardName, int cost, int dmgHit, int health, DmgType immunity, DmgType vulnurability){
         this->range = range;
         this->dmgType = dmgType;
         this->type = type;
@@ -135,12 +136,11 @@ class card : public IDamageable{
         private_card_id = id_counter;
         id_counter++;
         this->health = health;
-        hitEffect.damage = hitEffectDmg;
-        hitEffect.duration = hitEffectDuration;
-        hitEffect.playedTour = 0;
+        this->immunity = immunity;
+        this->vulnurability = vulnurability;
     }
 
-    int getDamageType(){
+    DmgType getDamageType(){
         return dmgType;
     }
 
@@ -184,16 +184,25 @@ class card : public IDamageable{
         return cardName;
     }
 
-    void addEffect(std::string effectName, Effect effect){
-        if(auto it = effects.find(effectName);it != effects.end()){
-            effects.at(effectName).duration += effect.duration;
+    Effect getHitEffect(){
+        return hitEffect;
+    }
+
+    void addEffect(DmgType hitType, Effect effect){
+        if(hitType == vulnurability){
+            effect.damage *= 2;
+        }
+        if(hitType != immunity){
+            if(auto it = effects.find(hitType);it != effects.end()){
+            effects.at(hitType).duration += effect.duration;
         }
         else{
-            effects.emplace(effectName, effect);
+            effects.emplace(hitType, effect);
+        }
         }
     }
 
-    std::map<std::string, Effect>& getEffects(){
+    std::map<DmgType, Effect>& getEffects(){
         return effects;
     }
 
@@ -234,8 +243,8 @@ class fantasyCard : public card {
 
      public:
 
-    fantasyCard(int range, DmgType dmgType, FantasyType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn, AbilityFunction  power)
-    : card(range, dmgType, type, cardName, cost, dmgHit, health, hitEffectDmg, hitEffectDuration, hitEffectPlayedTurn){
+    fantasyCard(int range, DmgType dmgType, FantasyType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, DmgType vulnurability, DmgType immunity, AbilityFunction  power)
+    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability){
 
         this->unique_ability = unique_ability;
         this->unique_ability_effect_power = unique_ability_effect_power;
@@ -264,63 +273,9 @@ class fantasyCard : public card {
 
     if(unique_dmg_buff > card::getCost()/2){
         std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
-
-            switch(card::getDamageType()){
-
-                case ICE:
-
-                std::cout<<"düşman donduruldu"<<std::endl;
-                break;
-
-                case FIRE:
-
-                std::cout<<"düşman yakıldı"<<std::endl;
-                break;
-
-                case NATURE:
-
-                std::cout<<"ENEMY HAS BEEN ROOTED"<<std::endl;
-                break;
-
-                case WIND:
-
-                std::cout<<"ENEMY HAS BEEN SLICED WİTH WİND"<<std::endl;
-                 target->takeDamage(card::getDmgHit());
-
-                break;
-
-                case MAGIC:
-
-                std::cout<<"YOU HİT EXTRA MAGIC DAMAGE AND GAINED 2 MANA"<<std::endl;
-                target->takeDamage(card::getDmgHit());
-                break;
-
-                case ANTIMAGIC:
-
-                std::cout<<"YOU HİT EXTRA ANTIMAGIC DAMAGE AND WASTED ENEMY'S 2 MANA"<<std::endl;
-                 target->takeDamage(card::getDmgHit());
-                break;
-
-                case DARKNESS:
-
-                std::cout<<"ENEMY BECAME FEARED"<<std::endl;
-                break;
-
-                case LIGHT:
-
-                std::cout<<"ENEMY BECAME BLİND"<<std::endl;
-                break;
-
-                case SLICE:
-
-                std::cout<<"ENEMY STARTED BLEEDİNG "<<std::endl;
-                 target->takeDamage(2);
-                break;
-
-                case NORMAL:
-
-                break;
-            }
+        if(card* tempTarget = dynamic_cast<card*>(target)){
+            tempTarget->addEffect(getDamageType(), getHitEffect());
+        }
         }
         card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
     }
@@ -399,8 +354,8 @@ class TechCard : public card{
 
     public:
 
-    TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn, AbilityFunction power)
-        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health, hitEffectDmg, hitEffectDuration, hitEffectPlayedTurn) {
+    TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, DmgType vulnurability, DmgType immunity, AbilityFunction  power)
+    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability){
         this->unique_ability = unique_ability;
         this->unique_ability_effect_power = unique_ability_effect_power;
         this->tType = type;
@@ -425,65 +380,9 @@ class TechCard : public card{
     target->takeDamage(card::getDmgHit());  
 
     if(unique_dmg_buff > card::getCost()/2){
-        std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
-
-            switch(card::getDamageType()){
-
-                case ICE:
-
-                std::cout<<"düşman donduruldu"<<std::endl;
-                break;
-
-                case FIRE:
-
-                std::cout<<"düşman yakıldı"<<std::endl;
-               target->takeDamage(2);
-                break;
-
-                case NATURE:
-
-                std::cout<<"ENEMY HAS BEEN ROOTED"<<std::endl;
-                break;
-
-                case WIND:
-
-                std::cout<<"ENEMY HAS BEEN SLICED WİTH WİND"<<std::endl;
-                 target->takeDamage(card::getDmgHit());
-
-                break;
-
-                case MAGIC:
-
-                std::cout<<"YOU HİT EXTRA MAGIC DAMAGE AND GAINED 2 MANA"<<std::endl;
-                target->takeDamage(card::getDmgHit());
-                break;
-
-                case ANTIMAGIC:
-
-                std::cout<<"YOU HİT EXTRA ANTIMAGIC DAMAGE AND WASTED ENEMY'S 2 MANA"<<std::endl;
-                 target->takeDamage(card::getDmgHit());
-                break;
-
-                case DARKNESS:
-
-                std::cout<<"ENEMY BECAME FEARED"<<std::endl;
-                break;
-
-                case LIGHT:
-
-                std::cout<<"ENEMY BECAME BLİND"<<std::endl;
-                break;
-
-                case SLICE:
-
-                std::cout<<"ENEMY STARTED BLEEDİNG "<<std::endl;
-                 target->takeDamage(2);
-                break;
-
-                case NORMAL:
-
-                break;
-            }
+        if(card* tempTarget = dynamic_cast<card*>(target)){
+            tempTarget->addEffect(getDamageType(), getHitEffect());
+        }
         }
         card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
     }
@@ -560,8 +459,8 @@ class SeaSonCard: public card {
 
     public:
 
-    SeaSonCard(int range, DmgType dmgType, SeaSonType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn, AbilityFunction power)
-        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health, hitEffectDmg, hitEffectDuration, hitEffectPlayedTurn) {
+    SeaSonCard(int range, DmgType dmgType, SeaSonType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, DmgType vulnurability, DmgType immunity, AbilityFunction  power)
+    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability){
         this->unique_ability = unique_ability;
         this->unique_ability_effect_power = unique_ability_effect_power;
         this->sType = type;
@@ -586,65 +485,11 @@ class SeaSonCard: public card {
     target->takeDamage(card::getDmgHit());  
 
     if(unique_dmg_buff > card::getCost()/2){
-        std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
+        std::cout << "ENEMY HAS BEEN MARKED" << std::endl;
 
-           switch(card::getDamageType()){
-
-                case ICE:
-
-                std::cout<<"düşman donduruldu"<<std::endl;
-                break;
-
-                case FIRE:
-
-                std::cout<<"düşman yakıldı"<<std::endl;
-               target->takeDamage(2);
-                break;
-
-                case NATURE:
-
-                std::cout<<"ENEMY HAS BEEN ROOTED"<<std::endl;
-                break;
-
-                case WIND:
-
-                std::cout<<"ENEMY HAS BEEN SLICED WİTH WİND"<<std::endl;
-                 target->takeDamage(card::getDmgHit());
-
-                break;
-
-                case MAGIC:
-
-                std::cout<<"YOU HİT EXTRA MAGIC DAMAGE AND GAINED 2 MANA"<<std::endl;
-                target->takeDamage(card::getDmgHit());
-                break;
-
-                case ANTIMAGIC:
-
-                std::cout<<"YOU HİT EXTRA ANTIMAGIC DAMAGE AND WASTED ENEMY'S 2 MANA"<<std::endl;
-                 target->takeDamage(card::getDmgHit());
-                break;
-
-                case DARKNESS:
-
-                std::cout<<"ENEMY BECAME FEARED"<<std::endl;
-                break;
-
-                case LIGHT:
-
-                std::cout<<"ENEMY BECAME BLİND"<<std::endl;
-                break;
-
-                case SLICE:
-
-                std::cout<<"ENEMY STARTED BLEEDİNG "<<std::endl;
-                 target->takeDamage(2);
-                break;
-
-                case NORMAL:
-
-                break;
-            }
+           if(card* tempTarget = dynamic_cast<card*>(target)){
+            tempTarget->addEffect(getDamageType(), getHitEffect());
+        }
         }
         card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
     }
@@ -709,10 +554,19 @@ class Player : public IDamageable {
     Deck<card*> yourDeck;
     std::vector<card*> hand;
     Deck<card*> team;
+    int mana;
 
     public:
 
     Player(std::string name) : player_name(name) {}
+
+    int getMana(){
+        return mana;
+    }
+
+    void setMana(int mana){
+        this->mana = mana;
+    }
 
     int getHealth() override{
         return health;
@@ -811,6 +665,7 @@ class gameManager{
     Player player1{"player1"};
     Player player2{"player2"};
     int turn_counter = 0;
+    int tour_counter = 0;
 
     private:
      gameManager(){}
@@ -832,17 +687,17 @@ void startGame() {
     // 20 FANTASY CARDS (With Lambda Abilities)
     // ==========================================
     master_deck.addCardToDeck(new fantasyCard(
-    1, card::DmgType::FIRE, fantasyCard::FantasyType::DRAGON, "Flame Dragon", 7, 45, "Breath", 20, 300, 
-    [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
-        std::cout << "-> Ability: Set the battlefield on fire!" << std::endl;
-        for(card* c: pitch.getCards()) {
-            c->takeDamage(5);
+        1, card::DmgType::FIRE, fantasyCard::FantasyType::DRAGON, "Flame Dragon", 7, 45, "Breath", 20, 300, card::DmgType::ICE, card::DmgType::FIRE,
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            std::cout << "-> Ability: Set the battlefield on fire!" << std::endl;
+            for(card* c: pitch.getCards()) {
+                c->takeDamage(5);
+            }
         }
-    }
-));
- 
+    ));
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::FIRE, fantasyCard::FantasyType::DRAGON, "Red Dragon", 6, 40, "Ember", 18, 400, 
+        1, card::DmgType::FIRE, fantasyCard::FantasyType::DRAGON, "Red Dragon", 6, 40, "Ember", 18, 400, card::DmgType::ICE, card::DmgType::FIRE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Shot a critical ember!" << std::endl; 
             if(target != nullptr){
@@ -850,9 +705,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        2, card::DmgType::ICE, fantasyCard::FantasyType::HEALER, "Ice Healer", 3, 10, "Polar", 15, 50, 
+        2, card::DmgType::ICE, fantasyCard::FantasyType::HEALER, "Ice Healer", 3, 10, "Polar", 15, 50, card::DmgType::FIRE, card::DmgType::ICE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Healed ally cards by freezing them!" << std::endl;
            if(target != nullptr){
@@ -860,9 +715,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        2, card::DmgType::ICE, fantasyCard::FantasyType::HEALER, "Frost Guardian", 3, 12, "Ice Shield", 12, 70,
+        2, card::DmgType::ICE, fantasyCard::FantasyType::HEALER, "Frost Guardian", 3, 12, "Ice Shield", 12, 70, card::DmgType::FIRE, card::DmgType::ICE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Granted ice shields to everyone!" << std::endl; 
             for(card* c: pitch.getCards()) {
@@ -870,17 +725,17 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Cruel Soldier", 4, 30, "Dance", 10, 30, 
+        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Cruel Soldier", 4, 30, "Dance", 10, 30, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Sword speed doubled!" << std::endl;
             self->updateDmgHit(40);
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Dawn Knight", 4, 35, "Strike of justice", 8, 150, 
+        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Dawn Knight", 4, 35, "Strike of justice", 8, 150, card::DmgType::DARKNESS, card::DmgType::LIGHT,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Struck with a strike of justice!" << std::endl; 
              if(target != nullptr){
@@ -888,9 +743,9 @@ void startGame() {
             } 
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        3, card::DmgType::MAGIC, fantasyCard::FantasyType::MAGICIAN, "Ancient Mage", 6, 25, "Meteor", 35, 90,
+        3, card::DmgType::MAGIC, fantasyCard::FantasyType::MAGICIAN, "Ancient Mage", 6, 25, "Meteor", 35, 90, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Rained meteors from the sky!" << std::endl; 
             for(card* c: pitch.getCards()) {
@@ -898,24 +753,24 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        3, card::DmgType::MAGIC, fantasyCard::FantasyType::MAGICIAN, "Sky Mage", 5, 22, "Magic breaker", 25, 45,
+        3, card::DmgType::MAGIC, fantasyCard::FantasyType::MAGICIAN, "Sky Mage", 5, 22, "Magic breaker", 25, 45, card::DmgType::ANTIMAGIC, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Broke magic resistance!" << std::endl; 
             self->updateDmgHit(40);
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        2, card::DmgType::NATURE, fantasyCard::FantasyType::SOLDIER, "Forest Guardian", 5, 28, "Vine Trap", 12, 200,
+        2, card::DmgType::NATURE, fantasyCard::FantasyType::SOLDIER, "Forest Guardian", 5, 28, "Vine Trap", 12, 200, card::DmgType::FIRE, card::DmgType::NATURE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Rooted enemies with vines!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        2, card::DmgType::NATURE, fantasyCard::FantasyType::HEALER, "Dryad", 2, 8, "Blessing", 10, 115,
+        2, card::DmgType::NATURE, fantasyCard::FantasyType::HEALER, "Dryad", 2, 8, "Blessing", 10, 115, card::DmgType::FIRE, card::DmgType::NATURE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Called upon Mother Nature's blessing!" << std::endl;
             if(target != nullptr){
@@ -923,17 +778,17 @@ void startGame() {
             } 
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::WIND, fantasyCard::FantasyType::DRAGON, "Storm Dragon", 7, 42, "Lightning Breath", 22, 300,
+        1, card::DmgType::WIND, fantasyCard::FantasyType::DRAGON, "Storm Dragon", 7, 42, "Lightning Breath", 22, 300, card::DmgType::MAGIC, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Created a hurricane!" << std::endl; 
             target->takeDamage(30);
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        3, card::DmgType::DARKNESS, fantasyCard::FantasyType::MAGICIAN, "Dark Mage", 6, 27, "transfusion", 30, 60,
+        3, card::DmgType::DARKNESS, fantasyCard::FantasyType::MAGICIAN, "Dark Mage", 6, 27, "transfusion", 30, 60, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Cast life drain!" << std::endl; 
             if(target){
@@ -944,16 +799,16 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        2, card::DmgType::LIGHT, fantasyCard::FantasyType::HEALER, "Light Priest", 4, 14, "Blinding Light", 20, 35,
+        2, card::DmgType::LIGHT, fantasyCard::FantasyType::HEALER, "Light Priest", 4, 14, "Blinding Light", 20, 35, card::DmgType::DARKNESS, card::DmgType::LIGHT,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Blinded everything with light!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::NORMAL, fantasyCard::FantasyType::SOLDIER, "Village Vanguard", 1, 15, "headbutt", 5, 130,
+        1, card::DmgType::NORMAL, fantasyCard::FantasyType::SOLDIER, "Village Vanguard", 1, 15, "headbutt", 5, 130, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Performed a simple but effective headbutt!" << std::endl; 
             if(target){
@@ -961,24 +816,24 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        2, card::DmgType::ANTIMAGIC, fantasyCard::FantasyType::MAGICIAN, "Spellbreaker", 5, 20, "Cleanse", 15,  50,
+        2, card::DmgType::ANTIMAGIC, fantasyCard::FantasyType::MAGICIAN, "Spellbreaker", 5, 20, "Cleanse", 15,  50, card::DmgType::NORMAL, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Cleared all spells in the area!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::FIRE, fantasyCard::FantasyType::SOLDIER, "Ember Guardian", 3, 25, "Ember", 8, 85,
+        1, card::DmgType::FIRE, fantasyCard::FantasyType::SOLDIER, "Ember Guardian", 3, 25, "Ember", 8, 85, card::DmgType::ICE, card::DmgType::FIRE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Infused weapon with fire!" << std::endl; 
             self->updateDmgHit(self->getDmgHit() * 2);
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        3, card::DmgType::ICE, fantasyCard::FantasyType::MAGICIAN, "Cryomancer", 5, 24, "Blizzard", 22,  60,
+        3, card::DmgType::ICE, fantasyCard::FantasyType::MAGICIAN, "Cryomancer", 5, 24, "Blizzard", 22,  60, card::DmgType::FIRE, card::DmgType::ICE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Started a blizzard!" << std::endl; 
             for(card* c: pitch.getCards()){
@@ -986,16 +841,16 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        2, card::DmgType::WIND, fantasyCard::FantasyType::HEALER, "Wind Healer", 3, 11, "Wind Cure", 14, 40, 
+        2, card::DmgType::WIND, fantasyCard::FantasyType::HEALER, "Wind Healer", 3, 11, "Wind Cure", 14, 40, card::DmgType::MAGIC, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Cleared poison with wind!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::DARKNESS, fantasyCard::FantasyType::DRAGON, "Shadow Dragon", 8, 50, "Dark Breath", 25, 300,
+        1, card::DmgType::DARKNESS, fantasyCard::FantasyType::DRAGON, "Shadow Dragon", 8, 50, "Dark Breath", 25, 300, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Cast dark fear!" << std::endl; 
             for(card* c:pitch.getCards()){
@@ -1003,9 +858,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Barbarian", 4, 32, "Rage", 11, 40,
+        1, card::DmgType::SLICE, fantasyCard::FantasyType::SOLDIER, "Barbarian", 4, 32, "Rage", 11, 40, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Entered rage mode!" << std::endl; 
             if(self){
@@ -1014,12 +869,12 @@ void startGame() {
             }
         }
     ));
- 
+
     // ==========================================
     // 20 TECH CARDS (With Lambda Abilities)
     // ==========================================
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Cyber Observer", 4, 22, "Laser", 18, 250,
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Cyber Observer", 4, 22, "Laser", 18, 250, card::DmgType::DARKNESS, card::DmgType::LIGHT,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Locked onto the target!" << std::endl; 
             if(target){
@@ -1027,9 +882,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "High Tech Robot", 4, 25, "Plasma Shot", 15, 400, 
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "High Tech Robot", 4, 25, "Plasma Shot", 15, 400, card::DmgType::DARKNESS, card::DmgType::LIGHT,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Fired a plasma ball!" << std::endl; 
             if(target){
@@ -1037,27 +892,27 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Chief Engineer", 3, 15, "Turret", 5, 45,
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Chief Engineer", 3, 15, "Turret", 5, 45, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [&](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
          std::cout << "-> Ability: Deployed an automatic turret!" << std::endl; 
-         card* turret = new TechCard(1 ,card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Turret", 0, 5, "NONE", 0, 10,
+         card* turret = new TechCard(1 ,card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Turret", 0, 5, "NONE", 0, 10, card::DmgType::MAGIC, card::DmgType::NORMAL,
              [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){});
             battle_field.addCardToDeck(turret); 
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Blacksmith Robot", 3, 12, "Repairment", 8, 90,
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Blacksmith Robot", 3, 12, "Repairment", 8, 90, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Repaired armor!" << std::endl; 
             target->takeDamage(-30);
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Pulse Guardian", 5, 32, "Shield", 25, 60,
+        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Pulse Guardian", 5, 32, "Shield", 25, 60, card::DmgType::SLICE, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Emitted an electromagnetic wave!" << std::endl; 
             if(target){
@@ -1065,9 +920,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Cyber Protector", 4, 28, "firewall shield", 20, 50,
+        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Cyber Protector", 4, 28, "firewall shield", 20, 50, card::DmgType::SLICE, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Activated firewall shield!" << std::endl;
             if(target){
@@ -1075,9 +930,9 @@ void startGame() {
             } 
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Doomsday Tank", 8, 55, "Shock", 40, 200,
+        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Doomsday Tank", 8, 55, "Shock", 40, 200, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Fired a nuclear missile!" << std::endl; 
             if(target){
@@ -1085,9 +940,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Goliath V2", 8, 58, "Pierceing Shot", 35, 500,
+        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Goliath V2", 8, 58, "Pierceing Shot", 35, 500, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Pierced through with a railgun!" << std::endl; 
             if(target){
@@ -1095,9 +950,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Light Drone", 2, 12, "Wave", 8, 10,
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Light Drone", 2, 12, "Wave", 8, 10, card::DmgType::FIRE, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Activated the signal jammer!" << std::endl; 
             card* targetAsCard = dynamic_cast<card*>(target);
@@ -1109,9 +964,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Swift Jet", 3, 18, "Wave", 12, 140,
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Swift Jet", 3, 18, "Wave", 12, 140, card::DmgType::ICE, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Caused a supersonic blast!" << std::endl; 
             if(target){
@@ -1119,9 +974,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::FIRE, TechCard::TechnoType::MECHANIC, "Pyro-Technician", 4, 20, "Explosion", 15, 60,
+        2, card::DmgType::FIRE, TechCard::TechnoType::MECHANIC, "Pyro-Technician", 4, 20, "Explosion", 15, 60, card::DmgType::ICE, card::DmgType::FIRE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Launched a napalm bomb!" << std::endl; 
             for(card* c:pitch.getCards()){
@@ -1129,16 +984,16 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::ICE, TechCard::TechnoType::SOLDIER, "Freezing Android", 4, 26, "Shield", 14, 75,
+        1, card::DmgType::ICE, TechCard::TechnoType::SOLDIER, "Freezing Android", 4, 26, "Shield", 14, 75, card::DmgType::FIRE, card::DmgType::ICE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Sprayed liquid nitrogen!" << std::endl;
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::NATURE, TechCard::TechnoType::ROBOT, "Bio-Mechanical Golem", 5, 30, "Laser", 22, 150,
+        2, card::DmgType::NATURE, TechCard::TechnoType::ROBOT, "Bio-Mechanical Golem", 5, 30, "Laser", 22, 150, card::DmgType::FIRE, card::DmgType::NATURE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Activated organic batteries!" << std::endl; 
             if(self){
@@ -1146,9 +1001,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::MAGIC, TechCard::TechnoType::TITAN, "Rune Circuit", 7, 40, "Shock", 30, 40,
+        3, card::DmgType::MAGIC, TechCard::TechnoType::TITAN, "Rune Circuit", 7, 40, "Shock", 30, 40, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Triggered a magical overload!" << std::endl; 
             if(self){
@@ -1156,9 +1011,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Saw Robot", 3, 24, "Slice and Dice", 10, 80,
+        1, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Saw Robot", 3, 24, "Slice and Dice", 10, 80, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Overclocked the blades!" << std::endl; 
             if(target){
@@ -1166,16 +1021,16 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Quantum Reflector", 5, 23, "Laser", 16, 40,
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Quantum Reflector", 5, 23, "Laser", 16, 40, card::DmgType::DARKNESS, card::DmgType::LIGHT,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Bent light to become invisible!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Repair Unit", 2, 10, "Nanorobot treatment", 12, 40,
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Repair Unit", 2, 10, "Nanorobot treatment", 12, 40, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Started repairs with nanobots!" << std::endl; 
             for(card* c:allyTeam.getCards()){
@@ -1183,9 +1038,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Dark Matter Armor", 9, 60, "black shield", 45, 50,
+        2, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Dark Matter Armor", 9, 60, "black shield", 45, 50, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Created a black hole!" << std::endl; 
             if(target){
@@ -1193,9 +1048,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Sonic Copter", 3, 15, "Wave", 10, 50,
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Sonic Copter", 3, 15, "Wave", 10, 50, card::DmgType::ICE, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Blew away with propeller wind!" << std::endl; 
             for(card* c: enemyTeam.getCards()){
@@ -1203,9 +1058,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Cybernetic Ninja", 4, 34, "Techno Slash", 18, 40,
+        2, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Cybernetic Ninja", 4, 34, "Techno Slash", 18, 40, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Emitted a katana shockwave!" << std::endl; 
             if(self){
@@ -1213,12 +1068,12 @@ void startGame() {
             }
         }
     ));
- 
+
     // ==========================================
     // 20 SEA SON CARDS (With Lambda Abilities)
     // ==========================================
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Nightmare Kraken", 9, 60, "Vortex", 50, 400,
+        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Nightmare Kraken", 9, 60, "Vortex", 50, 400, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Cast a deep sea curse!" << std::endl; 
             for(card* c:enemyTeam.getCards()){
@@ -1226,9 +1081,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Leviathan", 9, 65, "Tsunami", 45, 450,
+        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Leviathan", 9, 65, "Tsunami", 45, 450, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Started a tsunami!" << std::endl; 
             for(card* c: pitch.getCards()){
@@ -1236,17 +1091,17 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Coral Healer", 3, 8, "Wave", 18, 35,
+        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Coral Healer", 3, 8, "Wave", 18, 35, card::DmgType::FIRE, card::DmgType::NATURE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Active coral healing!" << std::endl; 
             target->takeDamage(-20);
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Mermaid", 3, 9, "Song of the sea", 16, 30,
+        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Mermaid", 3, 9, "Song of the sea", 16, 30, card::DmgType::FIRE, card::DmgType::NATURE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Sang the current song!" << std::endl;
             for(card* c: allyTeam.getCards()){
@@ -1254,9 +1109,9 @@ void startGame() {
             } 
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Blackbeard", 4, 35, "Boarding", 14, 70,
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Blackbeard", 4, 35, "Boarding", 14, 70, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Executed a boarding attack!" << std::endl; 
             for(card* c: enemyTeam.getCards()){
@@ -1264,47 +1119,47 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Captain Barbarossa", 5, 38, "Blast", 12, 70,
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Captain Barbarossa", 5, 38, "Blast", 12, 70, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Subjected the fleet to cannon fire!" << std::endl;
             target->takeDamage(40); 
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Sea Oracle", 5, 20, "Deluge", 30, 50,
+        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Sea Oracle", 5, 20, "Deluge", 30, 50, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Saw the storm of the future!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Siren Song", 4, 18, "Deluge", 25, 100,
+        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Siren Song", 4, 18, "Deluge", 25, 100, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Charmed the enemy card!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ICE, SeaSonCard::SeaSonType::PIRATE, "Arctic Raider", 4, 27, "Anchor", 11, 40,
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::PIRATE, "Arctic Raider", 4, 27, "Anchor", 11, 40, card::DmgType::FIRE, card::DmgType::ICE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Fired a frozen harpoon!" << std::endl; 
             target->takeDamage(30);
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ICE, SeaSonCard::SeaSonType::KRAKEN, "Frozen Giant Octopus", 7, 44, "Deep frozen", 28, 300,
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::KRAKEN, "Frozen Giant Octopus", 7, 44, "Deep frozen", 28, 300, card::DmgType::FIRE, card::DmgType::ICE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Threw an ice sheet with tentacles!" << std::endl; 
             target->takeDamage(60);
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Pirate Cannoneer", 4, 33, "Blast", 15, 35,
+        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Pirate Cannoneer", 4, 33, "Blast", 15, 35, card::DmgType::ICE, card::DmgType::FIRE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Used Greek fire!" << std::endl; 
             for(card* c: enemyTeam.getCards()){
@@ -1312,39 +1167,39 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::WIND, SeaSonCard::SeaSonType::ORACLE, "Stormbringer", 5, 21, "Deluge", 22, 55,
+        3, card::DmgType::WIND, SeaSonCard::SeaSonType::ORACLE, "Stormbringer", 5, 21, "Deluge", 22, 55, card::DmgType::MAGIC, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Blew a capsizing wind!" << std::endl; 
             target->takeDamage(30);
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::LIGHT, SeaSonCard::SeaSonType::MEDIC, "Sea Glow Sprite", 3, 10, "Night Glow", 20, 80,
+        2, card::DmgType::LIGHT, SeaSonCard::SeaSonType::MEDIC, "Sea Glow Sprite", 3, 10, "Night Glow", 20, 80, card::DmgType::DARKNESS, card::DmgType::LIGHT,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Blinded with a night glow!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::NORMAL, SeaSonCard::SeaSonType::PIRATE, "Ship Crew", 1, 12, "Drunken sailor", 4, 25,
+        1, card::DmgType::NORMAL, SeaSonCard::SeaSonType::PIRATE, "Ship Crew", 1, 12, "Drunken sailor", 4, 25, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Threw a rum bottle!" << std::endl; 
             target->takeDamage(10);
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ANTIMAGIC, SeaSonCard::SeaSonType::ORACLE, "Deepwater Guardian", 6, 26, "Deluge", 18, 90,
+        2, card::DmgType::ANTIMAGIC, SeaSonCard::SeaSonType::ORACLE, "Deepwater Guardian", 6, 26, "Deluge", 18, 90, card::DmgType::NORMAL, card::DmgType::MAGIC,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Will drown the magic shield in a vortex!" << std::endl; 
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::KRAKEN, "Razor Tentacle", 6, 40, "Eight Slash", 20, 350,
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::KRAKEN, "Razor Tentacle", 6, 40, "Eight Slash", 20, 350, card::DmgType::MAGIC, card::DmgType::NORMAL,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Sharp tentacle slash!" << std::endl; 
             for(card* c: enemyTeam.getCards()){
@@ -1352,9 +1207,9 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ICE, SeaSonCard::SeaSonType::MEDIC, "Glacial Savior", 4, 12, "Healing Wave", 14, 55,
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::MEDIC, "Glacial Savior", 4, 12, "Healing Wave", 14, 55, card::DmgType::FIRE, card::DmgType::ICE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Performed cold water shock therapy!" << std::endl; 
             for(card* c: allyTeam.getCards()){
@@ -1362,25 +1217,25 @@ void startGame() {
             }
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::ORACLE, "Abyss Witch", 5, 22, "Darkness of the deep sea", 26, 60,
+        3, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::ORACLE, "Abyss Witch", 5, 22, "Darkness of the deep sea", 26, 60, card::DmgType::LIGHT, card::DmgType::DARKNESS,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Mariana trench darkness!" << std::endl; 
             target->takeDamage(35);
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Lava Captain", 5, 36, "Lava shot", 16, 75,
+        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Lava Captain", 5, 36, "Lava shot", 16, 75, card::DmgType::ICE, card::DmgType::FIRE,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Volcanic pirate attack!" << std::endl; 
             target->takeDamage(45);
         }
     ));
- 
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::WIND, SeaSonCard::SeaSonType::MEDIC, "Monsoon Healer", 3, 11, "Wind therapy", 12, 40,
+        2, card::DmgType::WIND, SeaSonCard::SeaSonType::MEDIC, "Monsoon Healer", 3, 11, "Wind therapy", 12, 40, card::DmgType::MAGIC, card::DmgType::WIND,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) { 
             std::cout << "-> Ability: Humid storm healing!" << std::endl; 
             target->takeDamage(-25);
@@ -1426,7 +1281,9 @@ void startGame() {
             player2.playCard(p2_card, &player1, battle_field, player1);
             turn_counter++;
         }
-
+        tour_counter++;
+        player2.setMana(player2.getMana() + tour_counter);
+        player1.setMana(player1.getMana() + tour_counter);
     }
 
     void executeEffects(){
