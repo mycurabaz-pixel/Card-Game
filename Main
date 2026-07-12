@@ -14,6 +14,13 @@
 class Player;
 template <typename T> class Deck;
 
+struct Effect
+{
+    int damage;
+    int duration;
+    int playedTour;
+};
+
 
 //========
 //INTERFACE
@@ -112,10 +119,13 @@ class card : public IDamageable{
     std::string cardName;
     int cost;
     int dmgHit;
+    std::map<std::string, Effect> effects;
+    Effect hitEffect;
+    std::string effectName;
 
     public:
 
-    card(int range, DmgType dmgType, int type, std::string cardName, int cost, int dmgHit, int health){
+    card(int range, DmgType dmgType, int type, std::string cardName, int cost, int dmgHit, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn){
         this->range = range;
         this->dmgType = dmgType;
         this->type = type;
@@ -125,6 +135,9 @@ class card : public IDamageable{
         private_card_id = id_counter;
         id_counter++;
         this->health = health;
+        hitEffect.damage = hitEffectDmg;
+        hitEffect.duration = hitEffectDuration;
+        hitEffect.playedTour = 0;
     }
 
     int getDamageType(){
@@ -171,6 +184,19 @@ class card : public IDamageable{
         return cardName;
     }
 
+    void addEffect(std::string effectName, Effect effect){
+        if(auto it = effects.find(effectName);it != effects.end()){
+            effects.at(effectName).duration += effect.duration;
+        }
+        else{
+            effects.emplace(effectName, effect);
+        }
+    }
+
+    std::map<std::string, Effect>& getEffects(){
+        return effects;
+    }
+
     virtual ~card(){
         std::cout<<"card has been killed"<<std::endl;
     }
@@ -180,6 +206,8 @@ class card : public IDamageable{
     virtual void useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) = 0;
 
     virtual void activateTypeBuff() = 0;
+
+    virtual void getCardInfo() = 0;
 
 };
 
@@ -206,8 +234,8 @@ class fantasyCard : public card {
 
      public:
 
-    fantasyCard(int range, DmgType dmgType, FantasyType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, AbilityFunction  power)
-    : card(range, dmgType, type, cardName, cost, dmgHit, health){
+    fantasyCard(int range, DmgType dmgType, FantasyType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn, AbilityFunction  power)
+    : card(range, dmgType, type, cardName, cost, dmgHit, health, hitEffectDmg, hitEffectDuration, hitEffectPlayedTurn){
 
         this->unique_ability = unique_ability;
         this->unique_ability_effect_power = unique_ability_effect_power;
@@ -247,7 +275,6 @@ class fantasyCard : public card {
                 case FIRE:
 
                 std::cout<<"düşman yakıldı"<<std::endl;
-               target->takeDamage(2);
                 break;
 
                 case NATURE:
@@ -308,6 +335,44 @@ class fantasyCard : public card {
         std::cout<<"healing every fantasy card on the table and giving extra "<<card::getCost()<<"damage"<<std::endl;
     }
 
+// 1. fantasyCard Sınıfı İçin
+void getCardInfo() override {
+    std::cout << "\n=== [" << getName() << "] KART BILGISI ===" << std::endl;
+    std::cout << "Category       : Fantasy Card" << std::endl;
+    std::cout << "Card ID        : " << getPrivateCardId() << std::endl;
+    std::cout << "Mana Cost    : " << getCost() << std::endl;
+    std::cout << "Health   : " << getHealth() << std::endl;
+    std::cout << "Damage    : " << getDmgHit() << " (+ Buff: " << unique_dmg_buff << ")" << std::endl;
+    
+    std::cout << "Hasar Turu     : ";
+    switch(getDamageType()) {
+        case ICE: std::cout << "(ICE)"; break;
+        case FIRE: std::cout << "(FIRE)"; break;
+        case NATURE: std::cout << "(NATURE)"; break;
+        case WIND: std::cout << "(WIND)"; break;
+        case MAGIC: std::cout << "(MAGIC)"; break;
+        case ANTIMAGIC: std::cout << "(ANTIMAGIC)"; break;
+        case DARKNESS: std::cout << "(DARKNESS)"; break;
+        case LIGHT: std::cout << "(LIGHT)"; break;
+        case SLICE: std::cout << "(SLICE)"; break;
+        case NORMAL: std::cout << "(NORMAL)"; break;
+        default: std::cout << "UNKNOWN"; break;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Sinif (Class)  : ";
+    switch(fType) {
+        case DRAGON: std::cout << "DRAGON"; break;
+        case SOLDIER: std::cout << "SOLDIER"; break;
+        case MAGICIAN: std::cout << "MAGICIAN"; break;
+        case HEALER: std::cout << "HEALER"; break;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Special Ability   : " << unique_ability << " (Guc: " << unique_ability_effect_power << ")" << std::endl;
+    std::cout << "======================================\n" << std::endl;
+}
+
 };
 
 
@@ -334,8 +399,8 @@ class TechCard : public card{
 
     public:
 
-    TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, AbilityFunction power)
-        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health) {
+    TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn, AbilityFunction power)
+        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health, hitEffectDmg, hitEffectDuration, hitEffectPlayedTurn) {
         this->unique_ability = unique_ability;
         this->unique_ability_effect_power = unique_ability_effect_power;
         this->tType = type;
@@ -432,6 +497,44 @@ class TechCard : public card{
     void activateTypeBuff() override{
         std::cout<<"Every tech card on the table gets high voltage extra "<<card::getCost()/2<<"extra electrical damage"<<std::endl;
     }
+
+void getCardInfo() override {
+    std::cout << "\n=== [" << getName() << "] CARD INFO ===" << std::endl;
+    std::cout << "Category       : Tech Card" << std::endl;
+    std::cout << "Card ID        : " << getPrivateCardId() << std::endl;
+    std::cout << "Energy Cost    : " << getCost() << std::endl;
+    std::cout << "Health (Armor) : " << getHealth() << std::endl;
+    std::cout << "Damage Output  : " << getDmgHit() << " (+ Buff: " << unique_dmg_buff << ")" << std::endl;
+    
+    std::cout << "Damage Type    : ";
+    switch(getDamageType()) {
+        case ICE: std::cout << "Ice"; break;
+        case FIRE: std::cout << "Fire"; break;
+        case NATURE: std::cout << "Nature"; break;
+        case WIND: std::cout << "Wind"; break;
+        case MAGIC: std::cout << "Magic"; break;
+        case ANTIMAGIC: std::cout << "Anti-Magic"; break;
+        case DARKNESS: std::cout << "Darkness"; break;
+        case LIGHT: std::cout << "Light"; break;
+        case SLICE: std::cout << "Slice"; break;
+        case NORMAL: std::cout << "Normal"; break;
+        default: std::cout << "Unknown"; break;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Model Type     : ";
+    switch(tType) {
+        case ROBOT: std::cout << "Robot"; break;
+        case MECHANIC: std::cout << "Mechanic"; break;
+        case SOLDIER: std::cout << "Cyber Soldier"; break;
+        case TITAN: std::cout << "Titan"; break;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Hardware       : " << unique_ability << " (Effect Power: " << unique_ability_effect_power << ")" << std::endl;
+    std::cout << "======================================\n" << std::endl;
+}
+
 };
 
 class SeaSonCard: public card {
@@ -457,8 +560,8 @@ class SeaSonCard: public card {
 
     public:
 
-    SeaSonCard(int range, DmgType dmgType, SeaSonType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, AbilityFunction power)
-        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health) {
+    SeaSonCard(int range, DmgType dmgType, SeaSonType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, int hitEffectDmg, int hitEffectDuration, int hitEffectPlayedTurn, AbilityFunction power)
+        : card(range, dmgType, static_cast<int>(type), cardName, cost, dmgHit, health, hitEffectDmg, hitEffectDuration, hitEffectPlayedTurn) {
         this->unique_ability = unique_ability;
         this->unique_ability_effect_power = unique_ability_effect_power;
         this->sType = type;
@@ -555,6 +658,43 @@ class SeaSonCard: public card {
     void activateTypeBuff() override{
         std::cout<<"Every sea son card on the table gets extra "<<card::getCost()/2<<"damage to marked enemies"<<std::endl;
     }
+
+    void getCardInfo() override {
+    std::cout << "\n=== [" << getName() << "] CARD INFO ===" << std::endl;
+    std::cout << "Category       : Sea Son Card" << std::endl;
+    std::cout << "Card ID        : " << getPrivateCardId() << std::endl;
+    std::cout << "Silver Cost    : " << getCost() << std::endl;
+    std::cout << "Durability     : " << getHealth() << std::endl;
+    std::cout << "Attack Power   : " << getDmgHit() << " (+ Buff: " << unique_dmg_buff << ")" << std::endl;
+    
+    std::cout << "Damage Type    : ";
+    switch(getDamageType()) {
+        case ICE: std::cout << "Ice"; break;
+        case FIRE: std::cout << "Fire"; break;
+        case NATURE: std::cout << "Nature"; break;
+        case WIND: std::cout << "Wind"; break;
+        case MAGIC: std::cout << "Magic"; break;
+        case ANTIMAGIC: std::cout << "Anti-Magic"; break;
+        case DARKNESS: std::cout << "Darkness"; break;
+        case LIGHT: std::cout << "Light"; break;
+        case SLICE: std::cout << "Slice"; break;
+        case NORMAL: std::cout << "Normal"; break;
+        default: std::cout << "Unknown"; break;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Crew Type      : ";
+    switch(sType) {
+        case KRAKEN: std::cout << "Kraken"; break;
+        case MEDIC: std::cout << "Medic"; break;
+        case PIRATE: std::cout << "Pirate"; break;
+        case ORACLE: std::cout << "Oracle"; break;
+    }
+    std::cout << std::endl;
+
+    std::cout << "Sea Curse      : " << unique_ability << " (Effect Power: " << unique_ability_effect_power << ")" << std::endl;
+    std::cout << "======================================\n" << std::endl;
+}
 
 };
  
@@ -670,6 +810,7 @@ class gameManager{
     Deck<card*> battle_field;
     Player player1{"player1"};
     Player player2{"player2"};
+    int turn_counter = 0;
 
     private:
      gameManager(){}
@@ -1276,25 +1417,77 @@ void startGame() {
         if(p1_card != nullptr){
             std::cout<<player1.getName()<<"is playing..."<<std::endl;
             player1.playCard(p1_card, &player2, battle_field, player2);
+            turn_counter++;
         }
 
         card* p2_card = player2.selectCard();
         if(p2_card != nullptr){
             std::cout<<"\n"<<player2.getName()<<" is playing..."<<std::endl;
             player2.playCard(p2_card, &player1, battle_field, player1);
+            turn_counter++;
         }
 
+    }
+
+    void executeEffects(){
+        for(card* c: battle_field.getCards()){
+            auto& current_effects = c->getEffects();
+                for(auto it = current_effects.begin();it!=current_effects.end();){
+                    if((turn_counter - it->second.playedTour) % 2 == 0){
+                        c->takeDamage(it->second.damage);
+                        it->second.duration--;
+                    }
+                    if(it->second.duration == 0){
+                        c->getEffects().erase(it);
+                    }
+                }
+            }
+        }
+
+    bool isRunning = true; // Oyunun durumunu kontrol eder
+
+public:
+    void run() {
+        int choice;
+        bool isStarted = false;
+        while (isRunning) {
+            std::cout << "\n=== ANA MENU ===" << std::endl;
+            std::cout << "1. Oyunculari Kaydet ve Oyunu Baslat" << std::endl;
+            std::cout << "2. Bir Tur Oyna (Play Turn)" << std::endl;
+            std::cout << "3. Cikis" << std::endl;
+            std::cout << "Seciminiz: ";
+            std::cin >> choice;
+            std::cin.ignore(256, '\n');
+
+            switch (choice) {
+                case 1: {
+                    if(isStarted){
+                    std::string n1, n2;
+                    std::cout << "1. Oyuncu ismi: "; std::cin >> n1;std::cin.ignore(256, '\n');
+                    std::cout << "2. Oyuncu ismi: "; std::cin >> n2;std::cin.ignore(256, '\n');
+                    setPlayers(n1, n2);
+                    startGame();
+                    isStarted = true;
+                    break;
+                    }
+                }
+                case 2:
+                    playTurn();
+                    break;
+                case 3:
+                    isRunning = false;
+                    std::cout << "Cikis yapiliyor..." << std::endl;
+                    break;
+                default:
+                    std::cout << "Gecersiz secim!" << std::endl;
+            }
+        }
     }
 
 };
 
 int main() {
 
-    gameManager::getInstance().setPlayers("Geralt", "Yennefer");
-
-    gameManager::getInstance().startGame();
-
-    gameManager::getInstance().playTurn();
-
+    gameManager::getInstance().run();
     return 0;
 };
