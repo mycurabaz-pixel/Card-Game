@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Üçlü İttifak — Kart Savaşı</title>
+<style>
+  :root{
+    --felt:#16241f;
+    --felt-2:#1c2e27;
+    --parchment:#ede2c8;
+    --parchment-dark:#ddd0ac;
+    --ink:#2b2420;
+    --gold:#c9a24b;
+    --gold-bright:#f0cf7a;
+    --mana:#4472b8;
+    --health:#b2453a;
+    --fantasy:#7c5cbf;
+    --tech:#3aa9c9;
+    --season:#c97b3d;
+    --danger:#c1443a;
+    --ready:#57b06e;
+    --display-font: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+    --ui-font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --stat-font: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:var(--ui-font);
+    color:var(--parchment);
+    background:
+      radial-gradient(ellipse at 50% -10%, #22362d 0%, transparent 60%),
+      repeating-linear-gradient(115deg, var(--felt) 0px, var(--felt) 2px, var(--felt-2) 2px, var(--felt-2) 4px);
+    background-color:var(--felt);
+    min-height:100%;
+    overflow-x:hidden;
+  }
+  #app{min-height:100vh; display:flex; flex-direction:column;}
+
+  /* ============ MENU ============ */
+  .menu-screen{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:28px; padding:40px; text-align:center;
+  }
+  .menu-title{
+    font-family:var(--display-font); font-size:56px; letter-spacing:2px; color:var(--gold-bright);
+    text-shadow:0 2px 0 #00000080, 0 0 30px rgba(201,162,75,.25);
+    margin:0;
+  }
+  .menu-sub{ opacity:.75; font-size:15px; margin-top:-16px; color:#d9d0bd;}
+  .faction-strip{ display:flex; gap:14px; }
+  .faction-chip{
+    padding:6px 16px; border-radius:999px; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    border:1px solid currentColor; font-family:var(--stat-font);
+  }
+  .faction-chip.fantasy{color:var(--fantasy);}
+  .faction-chip.tech{color:var(--tech);}
+  .faction-chip.season{color:var(--season);}
+
+  .btn{
+    font-family:var(--ui-font); font-weight:600; font-size:15px; letter-spacing:.3px;
+    padding:14px 34px; border-radius:6px; border:1px solid var(--gold); cursor:pointer;
+    background:linear-gradient(180deg, #2b3f36, #1b2a24); color:var(--gold-bright);
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+    box-shadow:0 2px 0 rgba(0,0,0,.4);
+  }
+  .btn:hover:not(:disabled){ transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,.35); background:linear-gradient(180deg,#354f43,#20342c);}
+  .btn:active:not(:disabled){ transform:translateY(0); }
+  .btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn.primary{ background:linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#2b2109; border-color:#7d611f;}
+  .btn.primary:hover:not(:disabled){ background:linear-gradient(180deg,#f7dd94,#d4ac57);}
+  .btn.danger{ border-color:var(--danger); color:#ffcfc9;}
+  .btn.small{ padding:8px 16px; font-size:13px; }
+
+  .name-form{ display:flex; flex-direction:column; gap:14px; background:rgba(0,0,0,.25); padding:26px 32px; border-radius:10px; border:1px solid rgba(201,162,75,.35);}
+  .name-form label{ font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--gold); text-align:left; margin-bottom:-8px;}
+  .name-form input{
+    font-family:var(--ui-font); font-size:15px; padding:10px 12px; border-radius:5px; border:1px solid #3a4d43;
+    background:#0f1a16; color:var(--parchment); width:260px;
+  }
+  .name-form input:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+
+  /* ============ BOARD ============ */
+  .board{ flex:1; display:flex; flex-direction:column; padding:14px 18px 18px; gap:8px; position:relative;}
+  @media (min-width:901px){ .board{ margin-right:250px; } }
+
+  .hud-row{ display:flex; justify-content:space-between; align-items:center; }
+  .player-hud{ display:flex; align-items:center; gap:14px; }
+  .player-hud.reverse{ flex-direction:row-reverse; }
+  .player-hud.active-glow .avatar{ box-shadow:0 0 0 3px rgba(240,207,122,.5); }
+  .avatar{
+    width:52px;height:52px;border-radius:50%; display:flex;align-items:center;justify-content:center;
+    font-family:var(--display-font); font-size:20px; font-weight:bold; color:#12211b;
+    background:radial-gradient(circle at 35% 30%, var(--gold-bright), var(--gold));
+    border:2px solid #7d611f; cursor:default; position:relative; flex-shrink:0;
+  }
+  .avatar.targetable{ cursor:pointer; animation:pulseGold 1.1s infinite; }
+  .avatar.targetable:hover{ filter:brightness(1.15); }
+  @keyframes pulseGold{
+    0%,100%{ box-shadow:0 0 0 0 rgba(240,207,122,.65);}
+    50%{ box-shadow:0 0 0 9px rgba(240,207,122,0);}
+  }
+  .hud-stats{ display:flex; flex-direction:column; gap:5px; min-width:170px; }
+  .hud-name{ font-family:var(--display-font); font-size:17px; color:var(--gold-bright); }
+  .bar-track{ width:170px; height:10px; border-radius:6px; background:#0c1512; border:1px solid #0008; overflow:hidden;}
+  .bar-fill{ height:100%; }
+  .bar-fill.hp{ background:linear-gradient(90deg,#7a2a24,var(--health)); }
+  .bar-fill.mana{ background:linear-gradient(90deg,#274a7a,var(--mana)); }
+  .bar-label{ font-family:var(--stat-font); font-size:11px; opacity:.85; }
+
+  .turn-pill{
+    font-family:var(--stat-font); font-size:12px; letter-spacing:1px; text-transform:uppercase;
+    background:rgba(0,0,0,.35); border:1px solid var(--gold); padding:6px 16px; border-radius:999px; color:var(--gold-bright);
+    text-align:center;
+  }
+
+  .deck-stack{
+    width:58px; height:82px; position:relative; margin:0 6px; flex-shrink:0; cursor:default;
+  }
+  .deck-stack .layer{
+    position:absolute; inset:0; border-radius:7px;
+    background:
+      repeating-linear-gradient(45deg, #2b2116, #2b2116 4px, #241b12 4px, #241b12 8px);
+    border:2px solid var(--gold); box-shadow:0 2px 3px rgba(0,0,0,.5);
+  }
+  .deck-stack .layer:nth-child(1){ transform:translate(2px,4px) rotate(-3deg); }
+  .deck-stack .layer:nth-child(2){ transform:translate(1px,2px) rotate(2deg); }
+  .deck-stack .layer:nth-child(3){ transform:translate(0,0) rotate(0deg); display:flex; align-items:center; justify-content:center;}
+  .deck-crest{ font-family:var(--display-font); color:var(--gold-bright); font-size:22px; opacity:.85;}
+  .deck-count{
+    position:absolute; bottom:-9px; right:-9px; background:var(--gold-bright); color:#2b2109;
+    font-family:var(--stat-font); font-weight:bold; font-size:11px; border-radius:999px; padding:2px 6px; border:1px solid #7d611f;
+  }
+
+  /* Arena */
+  .arena{
+    flex:1; display:flex; flex-direction:column; justify-content:center; gap:6px;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,.18), rgba(0,0,0,.38));
+    border-radius:14px; border:1px solid rgba(201,162,75,.25); padding:16px 12px; position:relative; min-height:230px;
+  }
+  .arena-row{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; min-height:128px; align-items:center; }
+  .arena-side-label{
+    position:absolute; font-family:var(--stat-font); font-size:9px; letter-spacing:2px; opacity:.5;
+    text-transform:uppercase; left:14px;
+  }
+  .arena-seam{
+    height:2px; width:92%; margin:0 auto; align-self:center;
+    background:linear-gradient(90deg, transparent, var(--gold), transparent);
+    box-shadow:0 0 12px rgba(240,207,122,.5);
+    position:relative;
+  }
+  .arena-seam::after{
+    content:'ÇATIŞMA HATTI'; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    font-family:var(--stat-font); font-size:10px; letter-spacing:2px; background:var(--felt); padding:2px 10px; color:var(--gold);
+  }
+  .arena-empty{ font-family:var(--stat-font); font-size:12px; opacity:.4; letter-spacing:1px; }
+
+  /* Cards */
+  .card{
+    width:96px; height:134px; border-radius:9px; position:relative; cursor:pointer;
+    background:linear-gradient(160deg, var(--parchment), var(--parchment-dark));
+    color:var(--ink); border:2px solid var(--gold); box-shadow:0 3px 6px rgba(0,0,0,.4);
+    display:flex; flex-direction:column; padding:6px; transition:transform .15s ease, box-shadow .15s ease;
+    flex-shrink:0;
+  }
+  .card.mini{ width:82px; height:114px; padding:5px; }
+  .card .fband{
+    position:absolute; top:0; left:0; right:0; height:6px; border-radius:7px 7px 0 0;
+  }
+  .card.fantasy .fband{ background:var(--fantasy); }
+  .card.tech .fband{ background:var(--tech); }
+  .card.season .fband{ background:var(--season); }
+  .card .name{ font-family:var(--display-font); font-size:11px; line-height:1.15; margin-top:7px; font-weight:bold; }
+  .card .dmgtype{ font-family:var(--stat-font); font-size:8.5px; opacity:.65; letter-spacing:.5px; text-transform:uppercase;}
+  .card .spacer{ flex:1; }
+  .card .statline{ display:flex; justify-content:space-between; align-items:flex-end; font-family:var(--stat-font); font-size:10.5px; font-weight:bold;}
+  .card .cost-gem{
+    position:absolute; top:-8px; left:-8px; width:22px;height:22px; border-radius:50%; background:var(--mana);
+    color:#eaf1ff; display:flex; align-items:center; justify-content:center; font-size:11px; font-family:var(--stat-font);
+    border:2px solid #1c2e4a; box-shadow:0 2px 3px rgba(0,0,0,.5);
+  }
+  .card .dmg-tag{ color:var(--health); }
+  .card .hp-tag{ color:#2f6b3d; }
+  .card .curse-badge{
+    position:absolute; top:-8px; right:-8px; min-width:20px; height:20px; padding:0 4px; border-radius:10px;
+    background:#5a1030; color:#ff9fbf; display:flex; align-items:center; justify-content:center; font-size:10px;
+    font-family:var(--stat-font); border:2px solid #2a0716; box-shadow:0 2px 3px rgba(0,0,0,.5); z-index:6;
+    animation:cursePulse 1.4s infinite;
+  }
+  @keyframes cursePulse{ 0%,100%{ box-shadow:0 0 3px 0 #ff2e6e88; } 50%{ box-shadow:0 0 7px 2px #ff2e6ecc; } }
+
+  .card.selected{ transform:translateY(-14px) scale(1.06); box-shadow:0 10px 18px rgba(0,0,0,.5), 0 0 0 3px var(--gold-bright); z-index:5; }
+  .card.dead{ filter:grayscale(1) brightness(.5); }
+
+  .card.targetable{ animation:pulseGold 1.1s infinite; cursor:pointer; }
+  .card.not-targetable-dim{ opacity:.4; cursor:not-allowed; filter:grayscale(.5); }
+  .card.ready{ animation:pulseReady 1.35s infinite; cursor:pointer; }
+  @keyframes pulseReady{
+    0%,100%{ box-shadow:0 3px 6px rgba(0,0,0,.4), 0 0 0 0 rgba(87,176,110,.6);}
+    50%{ box-shadow:0 3px 6px rgba(0,0,0,.4), 0 0 0 7px rgba(87,176,110,0);}
+  }
+  .card.exhausted{ filter:grayscale(.6) brightness(.72); opacity:.85; cursor:default; }
+
+  .status-badge{
+    position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+    font-family:var(--stat-font); font-size:8px; padding:1px 7px; border-radius:999px; white-space:nowrap; border:1px solid #0006;
+    letter-spacing:.5px;
+  }
+  .status-badge.sick{ background:#b06a2c; color:#fff; }
+  .status-badge.spent{ background:#4a4a4a; color:#ddd; }
+  .status-badge.ready{ background:var(--ready); color:#eafff0; }
+
+  /* Hand */
+  .hand-wrap{ display:flex; justify-content:center; align-items:flex-end; height:150px; position:relative; }
+  .hand-wrap.opponent{ height:70px; align-items:flex-start; justify-content:center; }
+  .hand-fan{ display:flex; justify-content:center; }
+  .hand-fan .card{ margin-left:-24px; }
+  .hand-fan .card:first-child{ margin-left:0; }
+  .hand-fan .card:hover, .hand-fan .card.selected{ margin-top:-18px; }
+  .hidden-card{
+    width:56px;height:78px;border-radius:6px;margin-left:-30px;
+    background:repeating-linear-gradient(45deg,#2b2116,#2b2116 4px,#241b12 4px,#241b12 8px);
+    border:2px solid var(--gold); box-shadow:0 2px 4px rgba(0,0,0,.4);
+  }
+  .hidden-card:first-child{ margin-left:0; }
+
+  /* Tooltip / info panel */
+  .info-panel{
+    position:fixed; z-index:50; width:230px; background:linear-gradient(160deg,var(--parchment),var(--parchment-dark));
+    color:var(--ink); border:2px solid var(--gold-bright); border-radius:10px; padding:14px 16px;
+    box-shadow:0 12px 26px rgba(0,0,0,.55); pointer-events:none;
+  }
+  .info-panel h4{ font-family:var(--display-font); margin:0 0 2px; font-size:16px;}
+  .info-panel .tag{ font-family:var(--stat-font); font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:.7; margin-bottom:8px;}
+  .info-panel .row{ display:flex; justify-content:space-between; font-family:var(--stat-font); font-size:12px; margin:2px 0;}
+  .info-panel .ability{ margin-top:8px; padding-top:8px; border-top:1px dashed #0003; font-size:12px; line-height:1.4;}
+  .info-panel .ability b{ display:block; font-family:var(--display-font); font-size:13px; margin-bottom:2px;}
+  .scope-badge{ display:inline-block; margin-top:6px; font-family:var(--stat-font); font-size:9.5px; padding:2px 8px; border-radius:999px; letter-spacing:.5px;}
+  .scope-badge.single{ background:#7c5cbf33; color:#5a3fa0;}
+  .scope-badge.allyTeam{ background:#3aa9c933; color:#1f7690;}
+  .scope-badge.enemyTeam{ background:#c1443a33; color:#8a2d24;}
+  .scope-badge.arena{ background:#c9a24b33; color:#7d611f;}
+  .scope-badge.self{ background:#2f6b3d33; color:#204a2a;}
+
+  /* Action panel */
+  .action-overlay{
+    position:fixed; inset:0; background:rgba(6,12,10,.55); z-index:40;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .action-panel{
+    background:linear-gradient(160deg,#233b31,#182821); border:1px solid var(--gold); border-radius:14px;
+    padding:24px 28px; width:420px; max-width:90vw; box-shadow:0 20px 40px rgba(0,0,0,.6);
+    display:flex; flex-direction:column; gap:14px; align-items:center;
+  }
+  .action-panel .big-card{ transform:scale(1.35); margin:10px 0 18px; }
+  .action-btns{ display:flex; gap:12px; width:100%; }
+  .action-btns .btn{ flex:1; }
+  .hint-text{ font-size:12.5px; opacity:.85; text-align:center; line-height:1.5; }
+
+  .targeting-banner{
+    position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:45;
+    background:var(--gold-bright); color:#2b2109; font-family:var(--stat-font); font-size:13px; font-weight:bold;
+    padding:9px 22px; border-radius:999px; box-shadow:0 6px 16px rgba(0,0,0,.4); letter-spacing:.4px;
+    display:flex; align-items:center; gap:12px;
+  }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:60;
+    background:var(--danger); color:#fff2ef; font-family:var(--ui-font); font-size:14px; font-weight:600;
+    padding:12px 22px; border-radius:8px; box-shadow:0 10px 24px rgba(0,0,0,.5); max-width:80vw; text-align:center;
+  }
+  .toast.info{ background:var(--mana); }
+  .toast.good{ background:#2f7d45; }
+
+  .log-panel{
+    position:fixed; right:14px; top:14px; bottom:14px; width:230px; background:rgba(6,12,10,.72);
+    border:1px solid rgba(201,162,75,.3); border-radius:10px; padding:10px 12px; overflow-y:auto;
+    font-family:var(--stat-font); font-size:11.5px; line-height:1.6; z-index:10;
+  }
+  .log-panel h5{ margin:0 0 8px; font-family:var(--display-font); font-size:13px; color:var(--gold-bright); position:sticky; top:0; background:transparent;}
+  .log-entry{ opacity:.9; margin-bottom:4px; }
+  .log-entry.turn-mark{ color:var(--gold); font-weight:bold; margin-top:8px; }
+
+  .end-turn-wrap{ display:flex; justify-content:center; gap:12px; padding:6px 0 2px; }
+
+  .footer-hint{ text-align:center; font-size:11px; opacity:.5; padding-top:2px; }
+
+  @media (max-width: 900px){
+    .log-panel{ display:none; }
+    .card{ width:76px; height:106px; }
+    .card .name{ font-size:9.5px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ====================== DATA ====================== */
+const FACTIONS = { fantasy:'Fantasy', tech:'Tech', season:'Sea Son' };
+
+/*
+  scope: 'single' | 'allyTeam' | 'enemyTeam' | 'arena' | 'self'
+  targetRestriction (only for scope 'single'): 'any' | 'cardOnly'
+  abFx: yeteneğin gerçek etkisi
+    { type:'damage', amount }       -> hedef(ler)e hasar
+    { type:'heal', amount }         -> hedef(ler)i iyileştir
+    { type:'halveHp' }              -> hedeflerin canını yarıya indir
+    { type:'halveDmg' }             -> hedef kartın vuruş gücünü yarıya indir (cardOnly)
+    { type:'drain', amount, selfHeal } -> hedefe hasar + kendini iyileştir
+    { type:'buffSet', amount }      -> kendi vuruş gücünü sabitle
+    { type:'buffMul', amount }      -> kendi vuruş gücünü çarp
+*/
+const CARD_DEFS = [
+  // --- FANTASY ---
+  { name:'Flame Dragon', faction:'fantasy', dmgType:'Fire', cost:7, dmgHit:45, maxHealth:300,
+    ability:'Set the battlefield on fire', abilityDesc:'Sahadaki her karta 5 hasar verir (kendi takım dahil arenadaki herkes).',
+    scope:'arena', abFx:{type:'damage', amount:5} },
+  { name:'Red Dragon', faction:'fantasy', dmgType:'Fire', cost:6, dmgHit:40, maxHealth:400,
+    ability:'Critical Ember', abilityDesc:'Seçilen tek düşman hedefe 40 ekstra hasar verir.',
+    scope:'single', targetRestriction:'any', abFx:{type:'damage', amount:40} },
+  { name:'Ice Healer', faction:'fantasy', dmgType:'Ice', cost:3, dmgHit:10, maxHealth:50,
+    ability:'Polar Blessing', abilityDesc:'Seçilen tek dost hedefi 20 can iyileştirir.',
+    scope:'single', targetRestriction:'any', abFx:{type:'heal', amount:20} },
+  { name:'Cruel Soldier', faction:'fantasy', dmgType:'Slice', cost:4, dmgHit:30, maxHealth:30,
+    ability:'Sword Speed', abilityDesc:'Kendi vuruş gücünü 40’a sabitler. Hedef seçmeye gerek yok.',
+    scope:'self', abFx:{type:'buffSet', amount:40} },
+  { name:'Dark Mage', faction:'fantasy', dmgType:'Darkness', cost:6, dmgHit:27, maxHealth:60,
+    ability:'Life Drain', abilityDesc:'Seçilen düşmana 30 hasar verir, kendini 20 can iyileştirir.',
+    scope:'single', targetRestriction:'any', abFx:{type:'drain', amount:30, selfHeal:20} },
+  { name:'Village Vanguard', faction:'fantasy', dmgType:'Normal', cost:1, dmgHit:15, maxHealth:130,
+    ability:'Headbutt', abilityDesc:'Seçilen tek düşman hedefe 20 ekstra hasar verir.',
+    scope:'single', targetRestriction:'any', abFx:{type:'damage', amount:20} },
+
+  // --- TECH ---
+  { name:'Light Drone', faction:'tech', dmgType:'Wind', cost:2, dmgHit:12, maxHealth:10,
+    ability:'Signal Jammer', abilityDesc:'Hedef kartın vuruş gücünü yarıya indirir. SADECE bir karta uygulanabilir, oyuncuya uygulanamaz.',
+    scope:'single', targetRestriction:'cardOnly', abFx:{type:'halveDmg'} },
+  { name:'Sonic Copter', faction:'tech', dmgType:'Wind', cost:3, dmgHit:15, maxHealth:50,
+    ability:'Propeller Blast', abilityDesc:'Rakip takımdaki tüm kartlara 10 hasar verir.',
+    scope:'enemyTeam', abFx:{type:'damage', amount:10} },
+  { name:'Repair Unit', faction:'tech', dmgType:'Normal', cost:2, dmgHit:10, maxHealth:40,
+    ability:'Nanorobot Treatment', abilityDesc:'Kendi takımındaki tüm kartları 10 can iyileştirir.',
+    scope:'allyTeam', abFx:{type:'heal', amount:10} },
+  { name:'Bio-Mechanical Golem', faction:'tech', dmgType:'Nature', cost:5, dmgHit:30, maxHealth:150,
+    ability:'Organic Batteries', abilityDesc:'Kendi vuruş gücünü 3 katına çıkarır. Hedef seçmeye gerek yok.',
+    scope:'self', abFx:{type:'buffMul', amount:3} },
+  { name:'Doomsday Tank', faction:'tech', dmgType:'Darkness', cost:8, dmgHit:55, maxHealth:200,
+    ability:'Nuclear Missile', abilityDesc:'Seçilen tek düşman hedefe 70 ekstra hasar verir.',
+    scope:'single', targetRestriction:'any', abFx:{type:'damage', amount:70} },
+
+  // --- SEA SON ---
+  { name:'Nightmare Kraken', faction:'season', dmgType:'Darkness', cost:9, dmgHit:60, maxHealth:400,
+    ability:'Deep Sea Curse', abilityDesc:'Rakip takımdaki tüm kartların canını yarıya indirir.',
+    scope:'enemyTeam', abFx:{type:'halveHp'} },
+  { name:'Coral Healer', faction:'season', dmgType:'Nature', cost:3, dmgHit:8, maxHealth:35,
+    ability:'Coral Healing', abilityDesc:'Seçilen tek dost hedefi 20 can iyileştirir.',
+    scope:'single', targetRestriction:'any', abFx:{type:'heal', amount:20} },
+  { name:'Mermaid', faction:'season', dmgType:'Nature', cost:3, dmgHit:9, maxHealth:30,
+    ability:'Song of the Sea', abilityDesc:'Kendi takımındaki tüm kartları 5 can iyileştirir.',
+    scope:'allyTeam', abFx:{type:'heal', amount:5} },
+  { name:'Blackbeard', faction:'season', dmgType:'Slice', cost:4, dmgHit:35, maxHealth:70,
+    ability:'Boarding Attack', abilityDesc:'Rakip takımdaki tüm kartlara 10 hasar verir.',
+    scope:'enemyTeam', abFx:{type:'damage', amount:10} },
+];
+
+/* immunity / vulnerability — C++ kart tanımlarından (token'lar dmgType ile aynı yazımda) */
+const IMM_VULN = {
+  // isim: [immunity, vulnerability]
+  'Flame Dragon':['Fire','Ice'],
+  'Red Dragon':['Fire','Ice'],
+  'Ice Healer':['Ice','Fire'],
+  'Cruel Soldier':['Normal','Magic'],
+  'Dark Mage':['Darkness','Light'],
+  'Village Vanguard':['Normal','Magic'],
+  'Light Drone':['Wind','Fire'],
+  'Sonic Copter':['Wind','Ice'],
+  'Repair Unit':['Normal','Magic'],
+  'Bio-Mechanical Golem':['Nature','Fire'],
+  'Doomsday Tank':['Darkness','Light'],
+  'Nightmare Kraken':['Darkness','Light'],
+  'Coral Healer':['Nature','Fire'],
+  'Mermaid':['Nature','Fire'],
+  'Blackbeard':['Normal','Magic'],
+};
+CARD_DEFS.forEach(d=>{ const iv=IMM_VULN[d.name]; if(iv){ d.immunity=iv[0]; d.vulnerability=iv[1]; } });
+
+let uidCounter = 1;
+function instantiate(def){
+  return Object.assign({}, def, {
+    uid:'c'+(uidCounter++),
+    health:def.maxHealth,
+    summonSick:false,     // bu tur sürüldü, aksiyon alamaz
+    actedThisTurn:false,  // bu tur zaten aksiyon aldı
+    effects:[],           // aktif lanetler (DOT): {dmgType, damage, duration}
+  });
+}
+function buildDeck(){
+  const deck = [];
+  CARD_DEFS.forEach(def => { deck.push(instantiate(def)); });
+  for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  return deck;
+}
+
+/* ====================== STATE ====================== */
+const state = {
+  screen:'menu', // menu | naming | playing | gameover
+  names:['Geralt','Yennefer'],
+  players:null,
+  activeIdx:0,
+  tourCounter:0,
+  turnSubPhase:'idle', // idle | hand-selected | arena-selected | targeting | acted
+  selectedCard:null,
+  selectedSource:null,     // 'hand' | 'arena'
+  selectedActionType:null, // 'deploy' | 'hit' | 'ability'
+  log:[],
+  toast:null,
+  hoverInfo:null,
+  winner:null,
+};
+
+function newPlayer(name){
+  return { name, health:1000, mana:5, deck:buildDeck(), hand:[], team:[] };
+}
+
+function pushLog(msg, mark){
+  state.log.push({msg, mark: !!mark});
+}
+
+function showToast(msg, kind){
+  state.toast = {msg, kind: kind||'danger'};
+  render();
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>{ state.toast=null; render(); }, 2600);
+}
+
+/* ====================== GAME LOGIC ====================== */
+function startGame(n1, n2){
+  state.players = [newPlayer(n1||'Oyuncu 1'), newPlayer(n2||'Oyuncu 2')];
+  state.tourCounter = 0;
+  state.activeIdx = 0;
+  state.log = [];
+  state.screen = 'playing';
+  pushLog('--- Desteler hazırlandı ve karıştırıldı. Herkes 5 mana ile başlıyor. ---', true);
+  // açılış eli: her oyuncuya 4 kart
+  for(let i=0;i<4;i++){
+    state.players.forEach(p=>{ if(p.deck.length){ p.hand.push(p.deck.pop()); } });
+  }
+  pushLog('Her oyuncu 4 kartlık açılış eli çekti.');
+  clearSelection();
+  state.turnSubPhase='idle';
+  render();
+}
+
+function drawForBoth(){
+  state.players.forEach((p) => {
+    if(p.deck.length){
+      const c = p.deck.pop();
+      p.hand.push(c);
+      pushLog(`${p.name} bir kart çekti: ${c.name}`);
+    } else {
+      pushLog(`${p.name}'ın destesi boş, kart çekemedi.`);
+    }
+  });
+  clearSelection();
+  state.turnSubPhase='idle';
+  render();
+}
+
+function activePlayer(){ return state.players[state.activeIdx]; }
+function enemyPlayer(){ return state.players[1-state.activeIdx]; }
+
+function clearSelection(){
+  state.selectedCard = null;
+  state.selectedSource = null;
+  state.selectedActionType = null;
+}
+
+/* ---- HAND: kart seçip arenaya sürme ---- */
+function selectHandCard(card){
+  if(state.turnSubPhase!=='idle') return;
+  const p = activePlayer();
+  if(card.cost > p.mana){
+    showToast(`${card.name} sürmek için ${card.cost} mana gerekiyor, sende ${p.mana} var.`);
+    return;
+  }
+  state.selectedCard = card;
+  state.selectedSource = 'hand';
+  state.selectedActionType = 'deploy';
+  state.turnSubPhase = 'hand-selected';
+  render();
+}
+
+function deployCard(){
+  const p = activePlayer();
+  const card = state.selectedCard;
+  if(card.cost > p.mana){ showToast('Yeterli mana yok.'); return; }
+  p.hand = p.hand.filter(c=>c.uid!==card.uid);
+  card.summonSick = true;
+  p.team.push(card);
+  p.mana -= card.cost;
+  pushLog(`${p.name}, ${card.name} kartını arenaya sürdü (-${card.cost} mana). Bu tur savaşamaz.`);
+  finishAction();
+}
+
+/* ---- ARENA: sürülü kartla aksiyon ---- */
+function selectArenaCard(card){
+  if(state.turnSubPhase!=='idle') return;
+  if(card.summonSick){ showToast(`${card.name} bu tur sürüldü, savaşamaz. Sonraki turu bekle.`,'info'); return; }
+  if(card.actedThisTurn){ showToast(`${card.name} bu tur zaten aksiyon aldı.`,'info'); return; }
+  state.selectedCard = card;
+  state.selectedSource = 'arena';
+  state.turnSubPhase = 'arena-selected';
+  render();
+}
+
+function chooseHit(){
+  state.selectedActionType='hit';
+  state.turnSubPhase='targeting';
+  render();
+}
+function chooseAbility(){
+  const card = state.selectedCard;
+  state.selectedActionType='ability';
+  if(card.scope==='single'){
+    state.turnSubPhase='targeting';
+    render();
+  } else {
+    resolveAbility(card, null);
+  }
+}
+
+/* hangi taraf hedeflenebilir: 'enemy' | 'ally' */
+function abilityTargetSide(card){
+  return card.abFx && card.abFx.type==='heal' ? 'ally' : 'enemy';
+}
+
+function clickTarget(kind, obj){
+  const card = state.selectedCard;
+  const type = state.selectedActionType;
+  if(type==='hit'){
+    resolveHit(card, kind, obj);
+    return;
+  }
+  // single ability
+  if(card.targetRestriction==='cardOnly' && kind==='player'){
+    showToast(`${card.name} sadece kartlara karşı kullanılabilir! Bir oyuncuyu hedef seçemezsin.`);
+    return;
+  }
+  resolveAbility(card, {kind, obj});
+}
+
+/* ---- resolvers ---- */
+function resolveHit(card, targetKind, targetObj){
+  // C++ random_unique_dmg: dmgHit + rastgele(0 .. cost*2)
+  const roll = Math.floor(Math.random() * (card.cost*2 + 1));
+  const total = card.dmgHit + roll;
+  const crit = roll > Math.floor(card.cost/2);
+  targetObj.health -= total;
+  if(targetKind==='player')
+    pushLog(`${card.name} → ${targetObj.name} oyuncusuna ${total} hasar (temel ${card.dmgHit} + ${roll} rastgele).`);
+  else
+    pushLog(`${card.name} → ${targetObj.name} kartına ${total} hasar (temel ${card.dmgHit} + ${roll} rastgele).`);
+
+  if(crit) applyCrit(card, roll, targetKind, targetObj, total);
+
+  if(targetKind==='player'){ if(checkGameOver(targetObj)) return; }
+  else handleCardDeath(targetObj);
+  markActed(card);
+  finishAction();
+}
+
+/* kritik vuruş etkisi — fantasy: lanet (DOT); tech/season: anlık elemental */
+function applyCrit(card, roll, kind, target, total){
+  pushLog(`⚡ KRİTİK! (${card.name} rastgele ${roll} > eşik ${Math.floor(card.cost/2)})`);
+  if(card.faction==='fantasy'){
+    if(kind==='card') applyCurse(card, target);
+    else pushLog(`${card.name} lanetini oyuncuya işleyemez.`);
+    return;
+  }
+  const owner = activePlayer();
+  const foe = enemyPlayer();
+  switch(card.dmgType){
+    case 'Fire':      target.health -= 2; pushLog(`🔥 ${target.name} yandı (+2 hasar).`); break;
+    case 'Wind':      target.health -= total; pushLog(`🌪 Rüzgar ikinci kez kesti (+${total} hasar).`); break;
+    case 'Magic':     target.health -= total; owner.mana += 2; pushLog(`✨ Büyü patladı (+${total} hasar), ${owner.name} +2 mana.`); break;
+    case 'Antimagic': target.health -= total; foe.mana = Math.max(0, foe.mana-2); pushLog(`🚫 Anti-büyü (+${total} hasar), ${foe.name} -2 mana.`); break;
+    case 'Slice':     target.health -= 2; pushLog(`🩸 ${target.name} kanamaya başladı (+2 hasar).`); break;
+    case 'Ice':       pushLog(`❄ ${target.name} donduruldu.`); break;
+    case 'Nature':    pushLog(`🌿 ${target.name} köklerle sarıldı.`); break;
+    case 'Darkness':  pushLog(`🌑 ${target.name} korkuya kapıldı.`); break;
+    case 'Light':     pushLog(`💡 ${target.name} kör oldu.`); break;
+    default: break;
+  }
+}
+
+/* fantasy lanet: hedef karta DOT ekler (immunity/vulnerability dikkate alınır) */
+function applyCurse(attacker, targetCard){
+  const el = attacker.dmgType;
+  if(el === targetCard.immunity){ pushLog(`${targetCard.name}, ${el} lanetine bağışık.`); return; }
+  let dmg = 2;
+  if(el === targetCard.vulnerability){ dmg *= 2; pushLog(`${targetCard.name} ${el}'e karşı zayıf — lanet iki katı!`); }
+  const ex = (targetCard.effects||[]).find(e=>e.dmgType===el);
+  if(ex){ ex.duration += 3; ex.damage = dmg; }
+  else { targetCard.effects = targetCard.effects||[]; targetCard.effects.push({dmgType:el, damage:dmg, duration:3}); }
+  pushLog(`☠ ${targetCard.name} ${el} laneti aldı (${dmg}/tur, 3 tur).`);
+}
+
+/* her tur sonunda lanetleri tetikle (C++ executeEffects) */
+function tickEffects(){
+  state.players.forEach(p=>{
+    p.team.forEach(c=>{
+      if(!c.effects || !c.effects.length) return;
+      let tot=0;
+      c.effects.forEach(e=>{ c.health -= e.damage; tot += e.damage; e.duration--; });
+      c.effects = c.effects.filter(e=>e.duration>0);
+      if(tot>0) pushLog(`☠ ${c.name} lanetlerden ${tot} hasar aldı.`);
+    });
+  });
+  state.players.forEach(p=>{ p.team.slice().forEach(c=>handleCardDeath(c)); });
+}
+
+function healObj(obj, amount, cap){
+  obj.health = cap ? Math.min(cap, obj.health + amount) : obj.health + amount;
+}
+
+function resolveAbility(card, target){
+  const p = activePlayer();
+  const e = enemyPlayer();
+  const fx = card.abFx || {};
+
+  switch(card.scope){
+    case 'self':
+      if(fx.type==='buffSet'){ card.dmgHit = fx.amount; }
+      else if(fx.type==='buffMul'){ card.dmgHit = card.dmgHit * fx.amount; }
+      pushLog(`${card.name} -> ${card.ability}: vuruş gücü artık ${card.dmgHit}.`);
+      break;
+
+    case 'allyTeam':
+      p.team.forEach(c=>{ if(c.health>0) healObj(c, fx.amount, c.maxHealth); });
+      pushLog(`${card.name} -> ${card.ability}: kendi takımı +${fx.amount} can.`);
+      break;
+
+    case 'enemyTeam':
+      if(fx.type==='halveHp'){
+        e.team.forEach(c=>{ if(c.health>0){ c.health = Math.floor(c.health/2); handleCardDeath(c); } });
+        pushLog(`${card.name} -> ${card.ability}: rakip takımın canı yarıya indi.`);
+      } else {
+        e.team.forEach(c=>{ if(c.health>0){ c.health -= fx.amount; handleCardDeath(c); } });
+        pushLog(`${card.name} -> ${card.ability}: rakip takıma ${fx.amount} hasar.`);
+      }
+      break;
+
+    case 'arena':
+      [...p.team, ...e.team].forEach(c=>{ if(c.health>0){ c.health -= fx.amount; handleCardDeath(c); } });
+      pushLog(`${card.name} -> ${card.ability}: tüm arenaya ${fx.amount} hasar.`);
+      break;
+
+    case 'single': {
+      const isPlayer = target.kind==='player';
+      const t = target.obj;
+      if(fx.type==='heal'){
+        healObj(t, fx.amount, isPlayer ? null : t.maxHealth);
+        pushLog(`${card.name} -> ${card.ability}: ${t.name} +${fx.amount} can.`);
+      } else if(fx.type==='halveDmg'){
+        t.dmgHit = Math.floor(t.dmgHit/2);
+        pushLog(`${card.name} -> ${card.ability}: ${t.name} kartının vuruş gücü ${t.dmgHit}'e düştü.`);
+      } else if(fx.type==='drain'){
+        t.health -= fx.amount;
+        healObj(card, fx.selfHeal, card.maxHealth);
+        pushLog(`${card.name} -> ${card.ability}: ${t.name} -${fx.amount} can, ${card.name} +${fx.selfHeal} can.`);
+      } else { // damage
+        t.health -= fx.amount;
+        pushLog(`${card.name} -> ${card.ability}: ${t.name} -${fx.amount} can.`);
+      }
+      if(isPlayer){ if(checkGameOver(t)) return; }
+      else { handleCardDeath(t); }
+      break;
+    }
+  }
+  markActed(card);
+  finishAction();
+}
+
+function markActed(card){
+  card.actedThisTurn = true;
+}
+
+function handleCardDeath(card){
+  if(card.health<=0){
+    pushLog(`${card.name} öldü!`);
+    state.players.forEach(pl=>{ pl.team = pl.team.filter(c=>c.uid!==card.uid); });
+  }
+}
+
+function checkGameOver(player){
+  if(player.health<=0){
+    state.winner = state.players.find(p=>p!==player);
+    state.screen='gameover';
+    render();
+    return true;
+  }
+  return false;
+}
+
+function finishAction(){
+  // aksiyon bitti -> oyuncu isterse başka aksiyon alabilir (idle'a döner)
+  clearSelection();
+  state.turnSubPhase = 'idle';
+  render();
+}
+
+function cancelSelection(){
+  clearSelection();
+  state.turnSubPhase = 'idle';
+  render();
+}
+
+function nextPlayerOrEndTurn(){
+  if(state.activeIdx===0){
+    state.activeIdx=1;
+    clearSelection();
+    state.turnSubPhase='idle';
+    render();
+  } else {
+    endTurn();
+  }
+}
+
+function endTurn(){
+  state.tourCounter++;
+  tickEffects();
+  state.players.forEach(p=>{
+    p.mana += state.tourCounter;
+    p.team.forEach(c=>{ c.summonSick=false; c.actedThisTurn=false; });
+  });
+  pushLog(`--- Tur ${state.tourCounter} sona erdi. Herkese +${state.tourCounter} mana. Kartlar tazelendi. ---`, true);
+  state.activeIdx=0;
+  drawForBoth();
+}
+
+/* ====================== RENDER ====================== */
+const app = document.getElementById('app');
+
+function cardStatline(card){
+  return `<div class="statline"><span class="dmg-tag">⚔ ${card.dmgHit}</span><span class="hp-tag">♥ ${Math.max(0,card.health)}</span></div>`;
+}
+
+function renderCard(card, opts){
+  opts = opts||{};
+  const cls = ['card', card.faction];
+  if(opts.mini) cls.push('mini');
+  if(opts.selected) cls.push('selected');
+  if(card.health<=0) cls.push('dead');
+  if(opts.targetable) cls.push('targetable');
+  if(opts.dim) cls.push('not-targetable-dim');
+  if(opts.ready) cls.push('ready');
+  if(opts.exhausted) cls.push('exhausted');
+  let badge = '';
+  if(opts.statusBadge) badge = `<div class="status-badge ${opts.statusBadge.cls}">${opts.statusBadge.text}</div>`;
+  const curse = (card.effects && card.effects.length)
+    ? `<div class="curse-badge" title="${card.effects.map(e=>e.dmgType+' '+e.damage+'/tur ('+e.duration+' tur)').join(', ')}">☠ ${card.effects.length}</div>`
+    : '';
+  return `<div class="${cls.join(' ')}" data-uid="${card.uid}" data-role="${opts.role||''}">
+      <div class="fband"></div>
+      <div class="cost-gem">${card.cost}</div>
+      ${curse}
+      <div class="name">${card.name}</div>
+      <div class="dmgtype">${card.dmgType} · ${FACTIONS[card.faction]}</div>
+      <div class="spacer"></div>
+      ${cardStatline(card)}
+      ${badge}
+    </div>`;
+}
+
+function renderHiddenHand(n){
+  let out='';
+  for(let i=0;i<n;i++) out += `<div class="hidden-card"></div>`;
+  return out;
+}
+
+function scopeLabel(scope){
+  return {single:'TEK HEDEF', allyTeam:'KENDİ TAKIMI', enemyTeam:'RAKİP TAKIMI', arena:'TÜM ARENA', self:'KENDİNE'}[scope];
+}
+
+function renderInfoPanelHTML(card, x, y){
+  const restrictionNote = card.scope==='single'
+    ? (card.targetRestriction==='cardOnly' ? '<div style="margin-top:4px;opacity:.7;">⚠ Sadece kartlara uygulanabilir</div>' : '')
+    : '';
+  return `<div class="info-panel" style="left:${x}px; top:${y}px;">
+    <h4>${card.name}</h4>
+    <div class="tag">${FACTIONS[card.faction]} · ${card.dmgType}</div>
+    <div class="row"><span>Mana Maliyeti</span><b>${card.cost}</b></div>
+    <div class="row"><span>Vuruş Hasarı</span><b>${card.dmgHit}–${card.dmgHit + card.cost*2}</b></div>
+    <div class="row"><span>Can</span><b>${Math.max(0,card.health)} / ${card.maxHealth}</b></div>
+    ${card.immunity?`<div class="row"><span>Bağışıklık / Zayıflık</span><b>${card.immunity} / ${card.vulnerability}</b></div>`:''}
+    ${(card.effects&&card.effects.length)?`<div class="row" style="color:#8a2d24;"><span>Aktif Lanet</span><b>${card.effects.map(e=>e.dmgType+' '+e.damage+'×'+e.duration).join(', ')}</b></div>`:''}
+    <div class="ability">
+      <b>${card.ability}</b>
+      ${card.abilityDesc}
+      ${restrictionNote}
+      <div class="scope-badge ${card.scope}">${scopeLabel(card.scope)}</div>
+    </div>
+  </div>`;
+}
+
+/* Hover ipucu: render() çağırmadan ayrı katmanda gösterilir,
+   böylece kartın üstüne gelmek DOM'u yeniden kurmaz ve tıklama bozulmaz. */
+let _tipEl = null;
+function tipLayer(){
+  if(!_tipEl){
+    _tipEl = document.createElement('div');
+    _tipEl.style.position='fixed';
+    _tipEl.style.zIndex='50';
+    _tipEl.style.pointerEvents='none';
+    _tipEl.style.display='none';
+    document.body.appendChild(_tipEl);
+  }
+  return _tipEl;
+}
+function showHover(card, x, y){
+  const t = tipLayer();
+  t.innerHTML = renderInfoPanelHTML(card, x, y);
+  t.style.display='block';
+}
+function hideHover(){
+  const t = tipLayer();
+  t.style.display='none';
+  t.innerHTML='';
+}
+
+function render(){
+  hideHover();
+  if(state.screen==='menu'){ renderMenu(); return; }
+  if(state.screen==='naming'){ renderNaming(); return; }
+  if(state.screen==='gameover'){ renderGameOver(); return; }
+  renderBoard();
+  attachBoardHandlers();
+}
+
+function renderMenu(){
+  app.innerHTML = `
+    <div class="menu-screen">
+      <h1 class="menu-title">ÜÇLÜ İTTİFAK</h1>
+      <div class="menu-sub">Fantasy · Tech · Sea Son — bir masada, tek galip.</div>
+      <div class="faction-strip">
+        <span class="faction-chip fantasy">Fantasy</span>
+        <span class="faction-chip tech">Tech</span>
+        <span class="faction-chip season">Sea Son</span>
+      </div>
+      <button class="btn primary" id="btn-newgame">Yeni Oyun Başlat</button>
+    </div>`;
+  document.getElementById('btn-newgame').onclick = ()=>{ state.screen='naming'; render(); };
+}
+
+function renderNaming(){
+  app.innerHTML = `
+    <div class="menu-screen">
+      <h1 class="menu-title" style="font-size:34px;">Oyuncuları Kaydet</h1>
+      <div class="name-form">
+        <label>1. Oyuncu İsmi</label>
+        <input id="n1" value="${state.names[0]}" />
+        <label>2. Oyuncu İsmi</label>
+        <input id="n2" value="${state.names[1]}" />
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn" id="btn-back">Geri</button>
+        <button class="btn primary" id="btn-start">Oyunu Başlat</button>
+      </div>
+    </div>`;
+  document.getElementById('btn-back').onclick=()=>{ state.screen='menu'; render(); };
+  document.getElementById('btn-start').onclick=()=>{
+    const n1=document.getElementById('n1').value.trim()||'Oyuncu 1';
+    const n2=document.getElementById('n2').value.trim()||'Oyuncu 2';
+    startGame(n1,n2);
+  };
+}
+
+function renderGameOver(){
+  app.innerHTML = `
+    <div class="menu-screen">
+      <h1 class="menu-title">${state.winner.name} KAZANDI!</h1>
+      <div class="menu-sub">Rakip oyuncu can puanını kaybetti.</div>
+      <button class="btn primary" id="btn-again">Yeniden Oyna</button>
+    </div>`;
+  document.getElementById('btn-again').onclick=()=>{ state.screen='menu'; state.winner=null; render(); };
+}
+
+function renderBoard(){
+  const [p1,p2] = state.players;
+  const active = activePlayer();
+  const enemy = enemyPlayer();
+  const idle = state.turnSubPhase==='idle';
+  const targeting = state.turnSubPhase==='targeting';
+
+  // targeting kuralları
+  let tSide=null, tPlayerOk=false, tCardOnly=false;
+  if(targeting){
+    const c = state.selectedCard;
+    if(state.selectedActionType==='hit'){ tSide='enemy'; tPlayerOk=true; }
+    else { // single ability
+      tSide = abilityTargetSide(c);
+      tCardOnly = c.targetRestriction==='cardOnly';
+      tPlayerOk = !tCardOnly;
+    }
+  }
+
+  function playerIsTargetable(who){
+    if(!targeting) return false;
+    if(!tPlayerOk) return false;
+    if(tSide==='enemy') return who===enemy;
+    if(tSide==='ally')  return who===active;
+    return false;
+  }
+
+  const p1IsActive = state.activeIdx===0;
+
+  // enemy tarafı üstte, active tarafı altta
+  function renderTeamRow(player, isEnemySide){
+    if(!player.team.length){
+      return `<div class="arena-row"><div class="arena-empty">— sahada kart yok —</div></div>`;
+    }
+    const cardsHtml = player.team.map(c=>{
+      const opts = { mini:true, role:'board' };
+      if(targeting){
+        const onTargetSide = (tSide==='enemy' && isEnemySide) || (tSide==='ally' && !isEnemySide);
+        const canTarget = onTargetSide && c.health>0;
+        opts.targetable = canTarget;
+        opts.dim = !canTarget;
+      } else if(idle && !isEnemySide){
+        // active oyuncunun sahadaki kartları
+        if(c.summonSick){ opts.exhausted=true; opts.statusBadge={cls:'sick', text:'YENİ'}; }
+        else if(c.actedThisTurn){ opts.exhausted=true; opts.statusBadge={cls:'spent', text:'YORGUN'}; }
+        else { opts.ready=true; opts.statusBadge={cls:'ready', text:'HAZIR'}; }
+      } else if(!isEnemySide){
+        if(c.summonSick) opts.statusBadge={cls:'sick', text:'YENİ'};
+        else if(c.actedThisTurn) opts.statusBadge={cls:'spent', text:'YORGUN'};
+      }
+      if(state.selectedCard && state.selectedCard.uid===c.uid) opts.selected=true;
+      return renderCard(c, opts);
+    }).join('');
+    return `<div class="arena-row">${cardsHtml}</div>`;
+  }
+
+  app.innerHTML = `
+    <div class="board">
+      <div class="hud-row">
+        <div class="player-hud ${p1IsActive?'active-glow':''}">
+          <div class="avatar ${playerIsTargetable(p1)?'targetable':''}" data-role="player-target" data-idx="0">${p1.name.slice(0,2).toUpperCase()}</div>
+          <div class="hud-stats">
+            <div class="hud-name">${p1.name} ${p1IsActive?'⟶':''}</div>
+            <div class="bar-track"><div class="bar-fill hp" style="width:${Math.max(0,p1.health)/10}%"></div></div>
+            <div class="bar-label">CAN ${Math.max(0,p1.health)} / 1000</div>
+            <div class="bar-track"><div class="bar-fill mana" style="width:${Math.min(100,p1.mana*4)}%"></div></div>
+            <div class="bar-label">MANA ${p1.mana}</div>
+          </div>
+        </div>
+        <div class="turn-pill">TUR ${state.tourCounter+1}<br>SIRADA: ${active.name}</div>
+        <div class="player-hud reverse ${!p1IsActive?'active-glow':''}">
+          <div class="avatar ${playerIsTargetable(p2)?'targetable':''}" data-role="player-target" data-idx="1">${p2.name.slice(0,2).toUpperCase()}</div>
+          <div class="hud-stats" style="align-items:flex-end;">
+            <div class="hud-name">${p2.name} ${!p1IsActive?'⟵':''}</div>
+            <div class="bar-track"><div class="bar-fill hp" style="width:${Math.max(0,p2.health)/10}%"></div></div>
+            <div class="bar-label">CAN ${Math.max(0,p2.health)} / 1000</div>
+            <div class="bar-track"><div class="bar-fill mana" style="width:${Math.min(100,p2.mana*4)}%"></div></div>
+            <div class="bar-label">MANA ${p2.mana}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-row" style="justify-content:space-between;">
+        <div class="deck-stack" title="${active.name} destesi">
+          <div class="layer"></div><div class="layer"></div>
+          <div class="layer"><span class="deck-crest">♠</span></div>
+          <div class="deck-count">${active.deck.length}</div>
+        </div>
+        <div class="hand-wrap opponent">
+          <div class="hand-fan">${renderHiddenHand(Math.min(enemy.hand.length,6))}</div>
+        </div>
+        <div style="width:58px;"></div>
+      </div>
+
+      <div class="arena">
+        <div class="arena-side-label" style="top:8px;">${enemy.name} (RAKİP)</div>
+        ${renderTeamRow(enemy, true)}
+        <div class="arena-seam"></div>
+        ${renderTeamRow(active, false)}
+        <div class="arena-side-label" style="bottom:8px;">${active.name} (SEN)</div>
+      </div>
+
+      <div class="hud-row" style="justify-content:space-between;">
+        <div style="width:58px;"></div>
+        <div class="hand-wrap">
+          <div class="hand-fan">${active.hand.map(c=>renderCard(c,{
+            selected: state.selectedCard&&state.selectedSource==='hand'&&state.selectedCard.uid===c.uid,
+            role:'hand'
+          })).join('')}</div>
+        </div>
+        <div style="width:58px;"></div>
+      </div>
+
+      <div class="end-turn-wrap">
+        ${idle ? `<button class="btn primary" id="btn-continue">${state.activeIdx===0 ? (active.name+' bitir → sıradaki oyuncu ⟶') : 'Turu Bitir ⟳'}</button>` : ''}
+      </div>
+      <div class="footer-hint">
+        Sıran boyunca istediğin kadar kart sürebilir ve <span style="color:var(--ready)">HAZIR</span> kartlarınla saldırabilirsin. Elinden kart seç → <b>Arenaya Sür</b>. Sahadaki HAZIR karta tıkla → <b>Normal Vuruş</b> / <b>Özel Yetenek</b>. Bitince sağdaki <b>Bitir</b> butonuna bas.
+      </div>
+    </div>
+
+    <div class="log-panel">
+      <h5>Savaş Günlüğü</h5>
+      ${state.log.slice().reverse().map(l=>`<div class="log-entry ${l.mark?'turn-mark':''}">${l.msg}</div>`).join('')}
+    </div>
+
+    ${(state.turnSubPhase==='hand-selected' || state.turnSubPhase==='arena-selected') ? renderActionOverlay() : ''}
+    ${targeting ? `<div class="targeting-banner">🎯 ${targetingBannerText()}
+        <button class="btn small danger" id="btn-cancel-target" style="padding:4px 10px;">İptal</button></div>` : ''}
+    ${state.toast ? `<div class="toast ${state.toast.kind}">${state.toast.msg}</div>` : ''}
+  `;
+}
+
+function targetingBannerText(){
+  const c = state.selectedCard;
+  if(state.selectedActionType==='hit') return `${c.name} — Normal Vuruş için RAKİP hedef seç`;
+  const side = abilityTargetSide(c)==='ally' ? 'DOST' : 'RAKİP';
+  const only = c.targetRestriction==='cardOnly' ? ' (sadece kart)' : '';
+  return `${c.name} — Özel Yetenek için ${side} hedef seç${only}`;
+}
+
+function renderActionOverlay(){
+  const card = state.selectedCard;
+  const p = activePlayer();
+  if(state.selectedSource==='hand'){
+    const canAfford = p.mana >= card.cost;
+    return `
+      <div class="action-overlay" id="action-overlay">
+        <div class="action-panel">
+          <div class="hint-text">${card.name} — ${card.dmgType} · ${FACTIONS[card.faction]}</div>
+          <div class="big-card">${renderCard(card,{})}</div>
+          <div class="hint-text">
+            Yetenek: <b>${card.ability}</b> — ${card.abilityDesc}<br/>
+            <span class="scope-badge ${card.scope}">${scopeLabel(card.scope)}</span>
+          </div>
+          <div class="hint-text">Bu kartı arenaya sür (<b>${card.cost} mana</b>). Sürüldüğü tur savaşamaz, sonraki turdan itibaren vuruş/yetenek kullanabilir.</div>
+          ${!canAfford ? `<div class="hint-text" style="color:#ff9d94;">Yetersiz mana (${card.cost} gerekli, ${p.mana} var)</div>` : ''}
+          <div class="action-btns">
+            <button class="btn primary" id="btn-deploy" ${!canAfford?'disabled':''}>⚑ Arenaya Sür</button>
+          </div>
+          <button class="btn small" id="btn-cancel-card">Vazgeç</button>
+        </div>
+      </div>`;
+  }
+  // arena kaynağı: hit / ability
+  return `
+    <div class="action-overlay" id="action-overlay">
+      <div class="action-panel">
+        <div class="hint-text">${card.name} — ${card.dmgType} · ${FACTIONS[card.faction]}</div>
+        <div class="big-card">${renderCard(card,{})}</div>
+        <div class="hint-text">
+          Yetenek: <b>${card.ability}</b> — ${card.abilityDesc}<br/>
+          <span class="scope-badge ${card.scope}">${scopeLabel(card.scope)}</span>
+        </div>
+        <div class="action-btns">
+          <button class="btn" id="btn-hit">⚔ Normal Vuruş (${card.dmgHit}–${card.dmgHit + card.cost*2})</button>
+          <button class="btn primary" id="btn-ability">✨ Özel Yetenek</button>
+        </div>
+        <button class="btn small" id="btn-cancel-card">Vazgeç</button>
+      </div>
+    </div>`;
+}
+
+/* ====================== EVENT WIRING ====================== */
+function attachBoardHandlers(){
+  const active = activePlayer();
+
+  // el kartları (aktif oyuncu)
+  document.querySelectorAll('.hand-fan .card[data-role="hand"]').forEach(el=>{
+    const uid = el.dataset.uid;
+    const card = active.hand.find(c=>c.uid===uid);
+    if(!card) return;
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); selectHandCard(card); });
+    el.addEventListener('mouseenter', ()=>{
+      const r = el.getBoundingClientRect();
+      showHover(card, Math.min(window.innerWidth-250, r.left), Math.max(8, r.top-260));
+    });
+    el.addEventListener('mouseleave', hideHover);
+  });
+
+  // saha kartları
+  document.querySelectorAll('.card[data-role="board"]').forEach(el=>{
+    const uid = el.dataset.uid;
+    let card=null, ownerIsEnemy=false;
+    state.players.forEach((p,idx)=>{ const f = p.team.find(c=>c.uid===uid); if(f){ card=f; ownerIsEnemy = idx===(1-state.activeIdx); } });
+    if(!card) return;
+
+    el.addEventListener('mouseenter', ()=>{
+      const r = el.getBoundingClientRect();
+      showHover(card, Math.min(window.innerWidth-250, r.left), r.top+70);
+    });
+    el.addEventListener('mouseleave', hideHover);
+
+    if(state.turnSubPhase==='targeting'){
+      if(el.classList.contains('targetable')){
+        el.addEventListener('click', (e)=>{ e.stopPropagation(); clickTarget('card', card); });
+      } else {
+        el.addEventListener('click', (e)=>{ e.stopPropagation(); showToast('Bu kart şu an geçerli bir hedef değil.', 'info'); });
+      }
+    } else if(state.turnSubPhase==='idle' && !ownerIsEnemy){
+      el.addEventListener('click', (e)=>{ e.stopPropagation(); selectArenaCard(card); });
+    }
+  });
+
+  // oyuncu avatarları (hedef)
+  document.querySelectorAll('.avatar[data-role="player-target"]').forEach(el=>{
+    const idx = parseInt(el.dataset.idx,10);
+    const player = state.players[idx];
+    if(el.classList.contains('targetable')){
+      el.addEventListener('click', (e)=>{ e.stopPropagation(); clickTarget('player', player); });
+    }
+  });
+
+  // overlay butonları
+  const deployBtn = document.getElementById('btn-deploy');
+  if(deployBtn) deployBtn.onclick = deployCard;
+  const hitBtn = document.getElementById('btn-hit');
+  if(hitBtn) hitBtn.onclick = chooseHit;
+  const abilityBtn = document.getElementById('btn-ability');
+  if(abilityBtn) abilityBtn.onclick = chooseAbility;
+  const cancelCardBtn = document.getElementById('btn-cancel-card');
+  if(cancelCardBtn) cancelCardBtn.onclick = cancelSelection;
+  const overlayBg = document.getElementById('action-overlay');
+  if(overlayBg) overlayBg.addEventListener('click', (e)=>{ if(e.target===overlayBg) cancelSelection(); });
+
+  const cancelTargetBtn = document.getElementById('btn-cancel-target');
+  if(cancelTargetBtn) cancelTargetBtn.onclick = cancelSelection;
+
+  const continueBtn = document.getElementById('btn-continue');
+  if(continueBtn) continueBtn.onclick = nextPlayerOrEndTurn;
+}
+
+render();
+</script>
+</body>
+</html>
