@@ -1,48 +1,83 @@
-#ifndef SEASONCARD_H
-#define SEASONCARD_H
+#include "SeaSonCard.h"
+#include <iostream>
+#include <random>
+#include <sstream>
 
-#include <string>
-#include <functional>
-#include "Card.h"
-#include "Deck.h"
+void SeaSonCard::random_unique_dmg(){
+    std::random_device rd;
 
-class SeaSonCard : public card {
+    std::mt19937 gen(rd());
 
-    public:
+    std::uniform_int_distribution<> interval_1(0, (card::getCost() * 2));
 
-    enum SeaSonType{
-        KRAKEN,
-        MEDIC,
-        PIRATE,
-        ORACLE
-    };
+    unique_dmg_buff = interval_1(gen);
 
-    using AbilityFunction = std::function<void(IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam)>;
+    card::updateDmgHit(card::getDmgHit() + unique_dmg_buff);
+}
 
-    private:
+void SeaSonCard::hit(IDamageable* target) {
+    if(!card::isStunned()){
+    random_unique_dmg();
 
-    std::string unique_ability;
-    int unique_ability_effect_power;
-    SeaSonType sType;
-    int unique_dmg_buff = 0;
-    AbilityFunction uniquePower;
+    target->takeDamage(card::getDmgHit());
 
-    public:
+    if(unique_dmg_buff > card::getCost()/2){
+        std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
 
-    SeaSonCard(int range, DmgType dmgType, SeaSonType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, DmgType vulnurability, DmgType immunity, AbilityFunction power)
-    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability){
-        this->unique_ability = unique_ability;
-        this->unique_ability_effect_power = unique_ability_effect_power;
-        this->sType = type;
-        this->uniquePower = power;
+        if(card* tempTarget = dynamic_cast<card*>(target)){
+            tempTarget->addEffect(getDamageType(), getHitEffect());
+        }
     }
+    card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
+    }
+}
 
-    void random_unique_dmg();
-    void hit(IDamageable* target) override;
-    void useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) override;
-    void activateTypeBuff() override;
-    std::string getCardInfo() override;
+void SeaSonCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) {
+    if(uniquePower && !card::isStunned()){
+        uniquePower(target, battlefield, this, allyTeam, enemyTeam);
+    }
+}
 
-};
+void SeaSonCard::activateTypeBuff() {
+    std::cout << "Every sea son card on the table gets extra " << card::getCost()/2 << "damage to marked enemies" << std::endl;
+}
 
-#endif // SEASONCARD_H
+std::string SeaSonCard::getCardInfo() {
+    std::ostringstream info;
+    info << "\n=== [" << getName() << "] CARD INFO ===\n";
+    info << "Category       : Sea Son Card\n";
+    info << "Card ID        : " << getPrivateCardId() << "\n";
+    info << "Silver Cost    : " << getCost() << "\n";
+    info << "Durability     : " << getHealth() << "\n";
+    info << "Attack Power   : " << getDmgHit() << " (+ Buff: " << unique_dmg_buff << ")\n";
+
+    info << "Damage Type    : ";
+    switch(getDamageType()) {
+        case ICE: info << "(ICE)"; break;
+        case FIRE: info << "(FIRE)"; break;
+        case NATURE: info << "(NATURE)"; break;
+        case WIND: info << "(WIND)"; break;
+        case MAGIC: info << "(MAGIC)"; break;
+        case ANTIMAGIC: info << "(ANTIMAGIC)"; break;
+        case DARKNESS: info << "(DARKNESS)"; break;
+        case LIGHT: info << "(LIGHT)"; break;
+        case SLICE: info << "(SLICE)"; break;
+        case NORMAL: info << "(NORMAL)"; break;
+        default: info << "UNKNOWN"; break;
+    }
+    info << "\n";
+
+    info << "Crew Type      : ";
+    switch(sType) {
+        case KRAKEN: info << "KRAKEN"; break;
+        case MEDIC: info << "MEDIC"; break;
+        case PIRATE: info << "PIRATE"; break;
+        case ORACLE: info << "ORACLE"; break;
+    }
+    info << "\n";
+
+    info << "Sea Curse      : " << unique_ability << " (Effect Power: " << unique_ability_effect_power << ")\n";
+    info << "======================================\n";
+
+    return info.str();
+}
