@@ -5,6 +5,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <memory>    // std::shared_ptr, std::make_shared (yetenek lambda'larinin ortak state'i icin)
+#include <utility>   // std::pair
+
+// NOT: TimedAbility yapisi artik GameManager.h icinde tanimli (buradaki kopyasi kaldirildi,
+// yoksa ayni ceviri biriminde "redefinition" hatasi olurdu).
 
 void gameManager::setPlayers(std::string player1_name, std::string player2_name){
     player1 = Player(player1_name);
@@ -12,6 +17,126 @@ void gameManager::setPlayers(std::string player1_name, std::string player2_name)
 }
 
 void gameManager::startGame() {
+
+    //===================
+    //CHARACTER SELECTİON
+    //===================
+
+    // Her karakterin KENDI 'originals' listesi olmali -> her biri ayri kapsamda (blok icinde)
+    // olusturuluyor. apply ve revert lambda'lari ayni shared_ptr'i yakaladigi icin ayni listeyi
+    // paylasirlar: apply eski degeri kaydeder, revert birebir geri yazar.
+    {
+        auto originals = std::make_shared<std::vector<std::pair<card*, int>>>();
+
+        character_pool.emplace("Hope of the Algeron", new Character(
+            "Knight of the Light", 1500, 30, 3, 1, 3,
+
+            // APPLY: once eski dmgHit'i kaydet, sonra degistir
+            [originals](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                originals->clear();
+                for(card* c : allyTeam.getCards()){
+                    originals->push_back({ c, c->getDmgHit() });   // eski deger
+                    c->takeDamage(-10);                            // iyilestirme: kalici (geri alinmaz)
+                    c->setDmgHit(c->getDmgHit() + 5);
+                }
+            },
+
+            // REVERT: kaydedilen listeden birebir geri yaz (canli takima bakmaz)
+            [originals](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                for(auto& p : *originals) p.first->setDmgHit(p.second);
+                originals->clear();
+            }));
+    }
+
+    {
+        auto originals = std::make_shared<std::vector<std::pair<card*, int>>>();
+
+        character_pool.emplace("First Prince of Kangreya", new Character(
+            "Arrival of the Throne", 1300, 40, 4, 2, 5,
+
+            // APPLY: rakip takimin gucunu yariya bol (eski degerleri kaydederek)
+            [originals](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                originals->clear();
+                for(card* c : enemyTeam.getCards()){
+                    originals->push_back({ c, c->getDmgHit() });
+                    c->setDmgHit(c->getDmgHit() / 2);
+                }
+            },
+
+            [originals](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                for(auto& p : *originals) p.first->setDmgHit(p.second);
+                originals->clear();
+            }));
+    }
+
+    {
+        auto self = std::make_shared<Character*>(nullptr);
+
+        Character* ch = new Character(
+            "Princess of Kangreya", 900, 60, 5, 2, 7, [self](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                            for(card* c : allyTeam.getCards()){c->setInvulnerable(true);}
+                            (*self)->setInvulnerable(true); 
+            },
+            [self](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                            for(card* c: allyTeam.getCards()){
+                                c->setInvulnerable(false);
+                                (*self)->setInvulnerable(false);
+                            }
+                        } 
+        );
+
+        *self = ch;
+        character_pool.emplace("First Daughter of Loras", ch);
+    }
+
+
+    {
+
+        character_pool.emplace("Queen of Kangreya", new Character("Loras", 1000, 55, 5, 1, 6, [](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                    for(card* c: enemyTeam.getCards()){c->setStunned(true);}        
+        },
+    [](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                            for(card* c: enemyTeam.getCards()){c->setStunned(false);}
+                        }));
+    }
+
+    {
+        auto knife_counter = std::make_shared<int>(0);
+        auto hit_by_knife = std::make_shared<std::vector<std::pair<IDamageable*, int>>>();
+
+        character_pool.emplace("Knife Master", new Character("Kont", 1100, 40, 1, 0, 3, [knife_counter, hit_by_knife](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                            target->takeDamage(5);
+                            bool found = false;
+                            (*knife_counter)++;
+                            for(auto& t : *hit_by_knife){
+                                if(t.first==target){
+                                    t.second++;
+                                    found == true;
+                                }}
+                                if(!found){hit_by_knife->push_back({target, 1});}
+
+                            if((*knife_counter) == 5){
+                                for(auto& t : *hit_by_knife){
+                                    t.first->takeDamage(t.second * 10);
+                                    hit_by_knife->clear();
+                                }
+                            }
+                        },
+                    [knife_counter, hit_by_knife](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                    }));
+    }
+
+
     // ==========================================
     // 20 FANTASY CARDS (With Lambda Abilities)
     // ==========================================
@@ -617,6 +742,18 @@ void gameManager::playTurn(){
         player2.playCard(p2_card, battle_field);
         turn_counter++;
     }
+
+    // [DUZELTME] Karakter atanmamissa getCharacter() nullptr doner -> once kontrol et,
+    // yoksa nullptr uzerinden setMana cagrilir ve program coker.
+    if(player1.hasCharacter())
+        player1.getCharacter()->setMana(player1.getCharacter()->getMana() + tour_counter);
+    if(player2.hasCharacter())
+        player2.getCharacter()->setMana(player2.getCharacter()->getMana() + tour_counter);
+
+        executeEffects();
+
+        tickCharacters(); // her tur sonunda: karakter cooldown'lari azalir + suresi dolan etkiler geri alinir
+        tour_counter++;   // tam bir tur bitti
 }
 
 void gameManager::executeEffects(){
@@ -699,6 +836,50 @@ void gameManager::checkTargetHealth(IDamageable* target) {
             battle_field.removeCardFromDeck(deadCard);
             // [DEGISIKLIK] owner nullptr guvenlik kontrolu
             if (deadCard->getOwner()) deadCard->getOwner()->getTeam().removeCardFromDeck(deadCard);
+        }
+    }
+}
+
+// gameManager karaktere DOGRUDAN dokunmaz; her sey Player uzerinden gecer.
+// user  = yetenegi kullanan oyuncu (karakteri onun icinde, allyTeam = user.getTeam())
+// enemy = rakip oyuncu (enemyTeam = enemy.getTeam())
+void gameManager::useCharacterAbility(Player& user, Player& enemy, IDamageable* target){
+    if(!user.hasCharacter()){
+        std::cout << user.getName() << " icin secili karakter yok." << std::endl;
+        return;
+    }
+
+    // Player kendi karakterini kullanir; cooldown doluysa false doner.
+    // (Eski degerleri kaydetme isini karakterin apply lambda'si kendi yapiyor.)
+    if(!user.useCharacterAbility(target, battle_field, enemy.getTeam())){
+        std::cout << user.getName() << "'in karakteri su an cooldownda ("
+                  << user.getCharacter()->getcurrentCooldown() << " tur kaldi)" << std::endl;
+        return;
+    }
+
+    // Sureli etkiyse sadece NE ZAMAN geri alinacagini kaydet; NE geri alinacagini lambda biliyor.
+    const int duration = user.getCharacterAbilityDuration();
+    if(duration > 0){
+        timed_abilities.push_back(TimedAbility{ &user, &enemy, tour_counter + duration, target });
+    }
+}
+
+void gameManager::tickCharacters(){
+    // 1) Karakter cooldown'larini oyuncular uzerinden azalt.
+    player1.tickCharacterCooldown();
+    player2.tickCharacterCooldown();
+
+    // 2) Suresi dolan etkileri karakterin kendi revert lambda'si geri alir.
+    //    Lambda, apply sirasinda kaydettigi listeden calistigi icin canli takimlari
+    //    kullanmaz -> sonradan takima katilan kartlar etkilenmez. Yine de imza geregi
+    //    takimlari geciyoruz (lambda isterse kullanabilir).
+    for(auto it = timed_abilities.begin(); it != timed_abilities.end(); ){
+        if(tour_counter >= it->expireTurn){
+            it->source->revertCharacterAbility(it->target, battle_field,
+                                               it->source->getTeam(), it->enemy->getTeam());
+            it = timed_abilities.erase(it);
+        } else {
+            ++it;
         }
     }
 }
