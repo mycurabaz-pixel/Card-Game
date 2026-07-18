@@ -21,6 +21,7 @@ void Player::playCard(card* played_card, Deck<card*>& battlefield){
     for(auto it = hand.begin(); it != hand.end(); ++it){
         if((*it)->getPrivateCardId() == played_card->getPrivateCardId()){
 
+            activeCharacter->setMana(activeCharacter->getMana() - played_card->getCost());
             battlefield.addCardToDeck(played_card);
             team.addCardToDeck(played_card);
             hand.erase(it);
