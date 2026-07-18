@@ -30,6 +30,7 @@ class card : public IDamageable {
     private:
 
     int health;
+    int maxHealth;
     inline static int id_counter = 1;
     int private_card_id;
     int private_deck_id;
@@ -44,6 +45,9 @@ class card : public IDamageable {
     DmgType immunity;
     DmgType vulnurability;
     Player* owner = nullptr; // [DEGISIKLIK] owner artik nullptr ile basliyor (onceden ilklenmiyordu)
+    bool invulnerable = false;
+    bool stunned = false;
+
 
     public:
 
@@ -59,6 +63,7 @@ class card : public IDamageable {
         this->health = health;
         this->immunity = immunity;
         this->vulnurability = vulnurability;
+        maxHealth = health;
     }
 
     DmgType getDamageType(){
@@ -89,16 +94,36 @@ class card : public IDamageable {
         return dmgHit;
     }
 
-    void takeDamage(int dmg) override {
-        health -= dmg;
+    void setDmgHit(int dmgHit){
+        this->dmgHit = dmgHit;
     }
+
+    void takeDamage(int damage) override{
+            if(invulnerable && damage > 0) return; 
+            
+            if(maxHealth >= health - damage){
+                health -= damage;
+            }
+                else if((health - damage) % maxHealth > damage){
+            health = maxHealth;
+            }
+        }
 
     int getHealth() override {
         return health;
     }
 
     void setHealth(int health) override {
-        this->health = health;
+        if(maxHealth>health){
+             this->health = health;
+        }
+        else{
+            health = maxHealth;
+        }
+    }
+
+    void setMaxHealth(int maxHealth){
+        this->maxHealth = maxHealth;
     }
 
     std::string getName() override {
@@ -116,6 +141,11 @@ class card : public IDamageable {
     Player* getOwner(){
         return owner;
     }
+
+    void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;} // [DUZELTME] == degil =
+    bool isInvulnerable(){return invulnerable;}
+    void setStunned(bool stunned){this->stunned = stunned;}
+    bool isStunned(){return stunned;}
 
     void addEffect(DmgType hitType, Effect effect){
         if(hitType == vulnurability){
