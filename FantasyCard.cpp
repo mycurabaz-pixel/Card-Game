@@ -16,9 +16,10 @@ void fantasyCard::random_unique_dmg(){
 }
 
 void fantasyCard::hit(IDamageable* target) {
-    random_unique_dmg();
+    if(!card::isStunned()){
+        random_unique_dmg();
 
-    target->takeDamage(card::getDmgHit());
+    target->takeDamage(this, card::getDmgHit());
 
     std::cout << card::getName() << ", " << target->getName() << " hedefine " << card::getDmgHit() << " vurdu!" << std::endl;
 
@@ -29,10 +30,11 @@ void fantasyCard::hit(IDamageable* target) {
         }
     }
     card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
+    }
 }
 
 void fantasyCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) {
-    if(uniquePower){
+    if(uniquePower && !card::isStunned()){
         uniquePower(target, battlefield, this, allyTeam, enemyTeam);
     }
 }
