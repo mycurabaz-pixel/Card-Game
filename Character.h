@@ -22,6 +22,7 @@ class Character : public IDamageable {
         int health, maxHealth, mana, maxMana, abilityCoolDown, currentCooldown = 0, abilityDuration, abilityCost;
         Ability ability, reverseAbility;
         bool invulnerable = false;
+        bool reflection_marked = false;
 
         public:
 
@@ -41,6 +42,7 @@ class Character : public IDamageable {
             if(currentCooldown > 0) return false;         // hazır değil
             if(ability) ability(target, battlefield, allyTeam, enemyTeam);
             currentCooldown = abilityCoolDown;            // beklemeyi başlat
+            useMana(abilityCost);
             return true;
             }
 
@@ -56,15 +58,16 @@ class Character : public IDamageable {
                 this->health = health;
             }
 
-            void takeDamage(int damage) override{
-                if(invulnerable && damage > 0) return; 
-                
+            void takeDamage(IDamageable* attacker, int damage) override{
+                if(invulnerable && damage > 0) return;
+
                 if(maxHealth >= health - damage){
                     health -= damage;
                 }
                     else if((health - damage) % maxHealth > damage){
                 health = maxHealth;
                 }
+                if(attacker && damage > 0 && isReflectionMarked()){ reflect(attacker, damage); }
             }
 
             std::string getName(){
@@ -76,6 +79,9 @@ class Character : public IDamageable {
             else{
                 this->mana = mana;
             }}
+            void useMana(int mana){
+                this->mana -= mana;
+            }
             int getMana(){return mana;}
             bool isAbilityReady(){return currentCooldown == 0;}
             void tickCoolDown(){currentCooldown --;}
@@ -83,6 +89,14 @@ class Character : public IDamageable {
             int getAbilityDuration(){return abilityDuration;}
             void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;}
             bool isInvulnerable(){return invulnerable;}
+            bool isReflectionMarked(){return reflection_marked;}
+            void setReflectionMarked(bool reflection_marked){this->reflection_marked = reflection_marked;}
+            void reflect(IDamageable* target, int damage){
+                if(target->isReflectionMarked()){
+                    return;
+                }
+                target->takeDamage(this, damage/3);
+            }
 };
 
 #endif // CHARACTER_H
