@@ -19,7 +19,7 @@ void TechCard::hit(IDamageable* target) {
     if(!card::isStunned()){
     random_unique_dmg();
 
-    target->takeDamage(card::getDmgHit());
+    target->takeDamage(this, card::getDmgHit());
 
     if(unique_dmg_buff > card::getCost()/2){
         std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
