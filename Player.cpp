@@ -43,12 +43,12 @@ card* Player::selectCard(){
 
 void Player::hitTarget(IDamageable* target, card* usedCard){
     usedCard->hit(target);
-    gameManager::getInstance().checkTargetHealth(target);
+    gameManager::getInstance().checkTargetHealth(nullptr);
 }
 
 void Player::useCardUniqueAbility(IDamageable* target, Deck<card*>& battlefield, card* used_card,
                                   Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
     used_card->useUniquePower(target, battlefield, used_card, allyTeam, enemyTeam);
 
-    gameManager::getInstance().checkTargetHealth(target);
+    gameManager::getInstance().checkTargetHealth(nullptr);
 }
