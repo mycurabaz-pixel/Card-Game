@@ -47,6 +47,7 @@ class card : public IDamageable {
     Player* owner = nullptr; // [DEGISIKLIK] owner artik nullptr ile basliyor (onceden ilklenmiyordu)
     bool invulnerable = false;
     bool stunned = false;
+    bool reflection_marked = false;
 
 
     public:
@@ -98,7 +99,7 @@ class card : public IDamageable {
         this->dmgHit = dmgHit;
     }
 
-    void takeDamage(int damage) override{
+    void takeDamage(IDamageable* attacker, int damage) override{
             if(invulnerable && damage > 0) return; 
             
             if(maxHealth >= health - damage){
@@ -107,6 +108,10 @@ class card : public IDamageable {
                 else if((health - damage) % maxHealth > damage){
             health = maxHealth;
             }
+
+            // [GUARD] attacker null olabilir (DOT, karakter iyilestirmesi vb.) -> null'da yansitma yok.
+            // damage > 0 sarti da eklendi: iyilestirmeler (negatif damage) yansimaz.
+            if(attacker && damage > 0 && isReflectionMarked()){ reflect(attacker, damage); }
         }
 
     int getHealth() override {
@@ -146,6 +151,14 @@ class card : public IDamageable {
     bool isInvulnerable(){return invulnerable;}
     void setStunned(bool stunned){this->stunned = stunned;}
     bool isStunned(){return stunned;}
+    bool isReflectionMarked(){return reflection_marked;}
+    void setReflectionMarked(bool reflection_marked){this->reflection_marked = reflection_marked;}
+    void reflect(IDamageable* target, int damage){
+        if(target->isReflectionMarked()){
+            return;
+    }
+    target->takeDamage(this, damage/3);
+}
 
     void addEffect(DmgType hitType, Effect effect){
         if(hitType == vulnurability){
