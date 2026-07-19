@@ -128,8 +128,8 @@ void gameManager::startGame() {
                             if((*knife_counter) == 5){
                                 for(auto& t : *hit_by_knife){
                                     t.first->takeDamage(nullptr, t.second * 10);
-                                    hit_by_knife->clear();
                                 }
+                                hit_by_knife->clear();
                             }
                         },
                     [knife_counter, hit_by_knife](IDamageable* target, Deck<card*>& battlefield,
