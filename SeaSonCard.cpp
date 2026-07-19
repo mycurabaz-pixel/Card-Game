@@ -16,76 +16,24 @@ void SeaSonCard::random_unique_dmg(){
 }
 
 void SeaSonCard::hit(IDamageable* target) {
+    if(!card::isStunned()){
     random_unique_dmg();
 
-    target->takeDamage(card::getDmgHit());
+    target->takeDamage(this, card::getDmgHit());
 
     if(unique_dmg_buff > card::getCost()/2){
         std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
 
-        switch(card::getDamageType()){
-
-            case ICE:
-
-            std::cout << "düşman donduruldu" << std::endl;
-            break;
-
-            case FIRE:
-
-            std::cout << "düşman yakıldı" << std::endl;
-            target->takeDamage(2);
-            break;
-
-            case NATURE:
-
-            std::cout << "ENEMY HAS BEEN ROOTED" << std::endl;
-            break;
-
-            case WIND:
-
-            std::cout << "ENEMY HAS BEEN SLICED WİTH WİND" << std::endl;
-            target->takeDamage(card::getDmgHit());
-
-            break;
-
-            case MAGIC:
-
-            std::cout << "YOU HİT EXTRA MAGIC DAMAGE AND GAINED 2 MANA" << std::endl;
-            target->takeDamage(card::getDmgHit());
-            break;
-
-            case ANTIMAGIC:
-
-            std::cout << "YOU HİT EXTRA ANTIMAGIC DAMAGE AND WASTED ENEMY'S 2 MANA" << std::endl;
-            target->takeDamage(card::getDmgHit());
-            break;
-
-            case DARKNESS:
-
-            std::cout << "ENEMY BECAME FEARED" << std::endl;
-            break;
-
-            case LIGHT:
-
-            std::cout << "ENEMY BECAME BLİND" << std::endl;
-            break;
-
-            case SLICE:
-
-            std::cout << "ENEMY STARTED BLEEDİNG " << std::endl;
-            target->takeDamage(2);
-            break;
-
-            case NORMAL:
-
-            break;
+        if(card* tempTarget = dynamic_cast<card*>(target)){
+            tempTarget->addEffect(getDamageType(), getHitEffect());
         }
     }
     card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
+    }
 }
 
 void SeaSonCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) {
-    if(uniquePower){
+    if(uniquePower && !card::isStunned()){
         uniquePower(target, battlefield, this, allyTeam, enemyTeam);
     }
 }
