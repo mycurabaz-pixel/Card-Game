@@ -41,6 +41,9 @@ class Player {
     void useCardUniqueAbility(IDamageable* target, Deck<card*>& battlefield, card* used_card,
                               Deck<card*>& allyTeam, Deck<card*>& enemyTeam);
 
+    void useCardReverseAbility(IDamageable* target, Deck<card*>& battlefield, card* used_card,
+                              Deck<card*>& allyTeam, Deck<card*>& enemyTeam);
+
     void shuffleDeck(){
         yourDeck.shuffle();
     }

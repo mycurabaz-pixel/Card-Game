@@ -38,6 +38,13 @@ void SeaSonCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, c
     }
 }
 
+void SeaSonCard::useReverseUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self,
+                                        Deck<card*> allyTeam, Deck<card*> enemyTeam){
+    if(reversePower && !card::isStunned()){
+        reversePower(target, battlefield, this, allyTeam, enemyTeam);
+    }
+}
+
 void SeaSonCard::activateTypeBuff() {
     std::cout << "Every sea son card on the table gets extra " << card::getCost()/2 << "damage to marked enemies" << std::endl;
 }
@@ -76,7 +83,7 @@ std::string SeaSonCard::getCardInfo() {
     }
     info << "\n";
 
-    info << "Sea Curse      : " << unique_ability << " (Effect Power: " << unique_ability_effect_power << ")\n";
+    info << "Sea Curse      : " << unique_ability << " (Effect Power: " <<"\n";
     info << "======================================\n";
 
     return info.str();

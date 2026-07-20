@@ -1,84 +1,49 @@
-#include "FantasyCard.h"
-#include <iostream>
-#include <random>
-#include <sstream>
+#ifndef FANTASYCARD_H
+#define FANTASYCARD_H
 
-void fantasyCard::random_unique_dmg(){
-    std::random_device rd;
+#include <string>
+#include <functional>
+#include "Card.h"
+#include "Deck.h"
 
-    std::mt19937 gen(rd());
+class fantasyCard : public card {
 
-    std::uniform_int_distribution<> interval_1(0, (card::getCost() * 2));
+    public:
 
-    unique_dmg_buff = interval_1(gen);
+    enum FantasyType{
+        DRAGON,
+        SOLDIER,
+        MAGICIAN,
+        HEALER
+    };
 
-    card::updateDmgHit(card::getDmgHit() + unique_dmg_buff);
-}
+    using AbilityFunction = std::function<void(IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam)>;
 
-void fantasyCard::hit(IDamageable* target) {
-    if(!card::isStunned()){
-        random_unique_dmg();
+    private:
 
-    target->takeDamage(card::getDmgHit());
+    std::string unique_ability;
+    FantasyType fType;
+    int unique_dmg_buff = 0;
+    AbilityFunction uniquePower;
+    AbilityFunction reversePower;
 
-    std::cout << card::getName() << ", " << target->getName() << " hedefine " << card::getDmgHit() << " vurdu!" << std::endl;
 
-    if(unique_dmg_buff > card::getCost()/2){
-        std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
-        if(card* tempTarget = dynamic_cast<card*>(target)){
-            tempTarget->addEffect(getDamageType(), getHitEffect());
-        }
+    public:
+
+    fantasyCard(int range, DmgType dmgType, FantasyType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int health, DmgType vulnurability, DmgType immunity, int powerDuration, int powerCost, AbilityFunction power, AbilityFunction reversePower)
+    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability, powerCost, powerDuration){
+        this->unique_ability = unique_ability;
+        this->fType = type;
+        this->uniquePower = power;
     }
-    card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);
-    }
-}
 
-void fantasyCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) {
-    if(uniquePower && !card::isStunned()){
-        uniquePower(target, battlefield, this, allyTeam, enemyTeam);
-    }
-}
+    void random_unique_dmg();
+    void hit(IDamageable* target) override;
+    void activateTypeBuff() override;
+    void useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) override;
+    void useReverseUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) override;
+    std::string getCardInfo() override;
 
-void fantasyCard::activateTypeBuff() {
-    std::cout << "healing every fantasy card on the table and giving extra " << card::getCost() << "damage" << std::endl;
-}
+};
 
-std::string fantasyCard::getCardInfo() {
-    std::ostringstream info;
-    info << "\n=== [" << getName() << "] CARD INFO ===\n";
-    info << "Category       : Fantasy Card\n";
-    info << "Card ID        : " << getPrivateCardId() << "\n";
-    info << "Mana Cost      : " << getCost() << "\n";
-    info << "Health         : " << getHealth() << "\n";
-    info << "Damage         : " << getDmgHit() << " (+ Buff: " << unique_dmg_buff << ")\n";
-
-    info << "Damage Type    : ";
-    switch(getDamageType()) {
-        case ICE: info << "(ICE)"; break;
-        case FIRE: info << "(FIRE)"; break;
-        case NATURE: info << "(NATURE)"; break;
-        case WIND: info << "(WIND)"; break;
-        case MAGIC: info << "(MAGIC)"; break;
-        case ANTIMAGIC: info << "(ANTIMAGIC)"; break;
-        case DARKNESS: info << "(DARKNESS)"; break;
-        case LIGHT: info << "(LIGHT)"; break;
-        case SLICE: info << "(SLICE)"; break;
-        case NORMAL: info << "(NORMAL)"; break;
-        default: info << "UNKNOWN"; break;
-    }
-    info << "\n";
-
-    info << "Class          : ";
-    switch(fType) {
-        case DRAGON: info << "DRAGON"; break;
-        case SOLDIER: info << "SOLDIER"; break;
-        case MAGICIAN: info << "MAGICIAN"; break;
-        case HEALER: info << "HEALER"; break;
-    }
-    info << "\n";
-
-    info << "Special Ability: " << unique_ability << " (Power: " << unique_ability_effect_power << ")\n";
-    info << "======================================\n";
-
-    return info.str();
-}
+#endif // FANTASYCARD_H

@@ -15,6 +15,7 @@
     Player* enemy;    // rakip oyuncu (enemyTeam icin)
     int expireTurn;
     IDamageable* target;
+    card* usedCard;
     // NOT: Neyin geri alinacagini burada tutmuyoruz. Her karakterin apply lambda'si
     // degistirdigi degerleri kendi icinde kaydeder, revert lambda'si da oradan geri yazar.
     // Bu sayede sadece dmgHit degil her turlu etki (invulnerable, mana, ...) geri alinabilir.
@@ -31,6 +32,7 @@ class gameManager {
     int tour_counter = 0;   // tam bir tur (her iki oyuncu oynadi) basina 1 kez artar
     bool isRunning = true; // Oyunun durumunu kontrol eder
     std::vector<TimedAbility> timed_abilities;
+    std::vector<TimedAbility> timed_card_abilities;
 
     gameManager(){}
 
@@ -48,7 +50,9 @@ class gameManager {
     void run();
     void checkTargetHealth(IDamageable* target);
     void useCharacterAbility(Player& user, Player& enemy, IDamageable* target);
+    void useCardAbility(Player& user, Player& enemy, IDamageable* target, card* usedCard);
     void tickCharacters();
+    void tickCards();
 
 };
 

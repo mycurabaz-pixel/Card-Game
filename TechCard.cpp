@@ -38,6 +38,13 @@ void TechCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, car
     }
 }
 
+void TechCard::useReverseUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self,
+                                        Deck<card*> allyTeam, Deck<card*> enemyTeam){
+    if(reversePower && !card::isStunned()){
+        reversePower(target, battlefield, this, allyTeam, enemyTeam);
+    }
+}
+
 void TechCard::activateTypeBuff() {
     std::cout << "Every tech card on the table gets high voltage extra " << card::getCost()/2 << "extra electrical damage" << std::endl;
 }
@@ -76,7 +83,7 @@ std::string TechCard::getCardInfo() {
     }
     info << "\n";
 
-    info << "Hardware       : " << unique_ability << " (Effect Power: " << unique_ability_effect_power << ")\n";
+    info << "Hardware       : " << unique_ability << "\n";
     info << "======================================\n";
 
     return info.str();

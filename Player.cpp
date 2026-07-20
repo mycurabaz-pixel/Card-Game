@@ -50,5 +50,14 @@ void Player::useCardUniqueAbility(IDamageable* target, Deck<card*>& battlefield,
                                   Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
     used_card->useUniquePower(target, battlefield, used_card, allyTeam, enemyTeam);
 
+    activeCharacter->useMana(used_card->getAbilityCost());
+
     gameManager::getInstance().checkTargetHealth(nullptr);
+}
+
+void Player::useCardReverseAbility(IDamageable* target, Deck<card*>& battlefield, card* used_card,
+    Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+        used_card->useReverseUniquePower(target, battlefield, used_card, allyTeam, enemyTeam);
+
+        gameManager::getInstance().checkTargetHealth(nullptr);
 }

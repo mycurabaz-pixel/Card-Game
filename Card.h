@@ -48,11 +48,13 @@ class card : public IDamageable {
     bool invulnerable = false;
     bool stunned = false;
     bool reflection_marked = false;
+    int powerCost;
+    int powerDuration;
 
 
     public:
 
-    card(int range, DmgType dmgType, int type, std::string cardName, int cost, int dmgHit, int health, DmgType immunity, DmgType vulnurability){
+    card(int range, DmgType dmgType, int type, std::string cardName, int cost, int dmgHit, int health, DmgType immunity, DmgType vulnurability, int powerCost, int powerDuration){
         this->range = range;
         this->dmgType = dmgType;
         this->type = type;
@@ -65,6 +67,8 @@ class card : public IDamageable {
         this->immunity = immunity;
         this->vulnurability = vulnurability;
         maxHealth = health;
+        this->powerCost = powerCost;
+        this->powerDuration = powerDuration;
     }
 
     DmgType getDamageType(){
@@ -147,6 +151,7 @@ class card : public IDamageable {
         return owner;
     }
 
+    int getAbilityCost(){return powerCost;}
     void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;} // [DUZELTME] == degil =
     bool isInvulnerable(){return invulnerable;}
     void setStunned(bool stunned){this->stunned = stunned;}
@@ -187,6 +192,8 @@ class card : public IDamageable {
     virtual void activateTypeBuff() = 0;
 
     virtual std::string getCardInfo() = 0;
+
+    virtual  void useReverseUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) = 0;
 
 };
 

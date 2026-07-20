@@ -39,6 +39,13 @@ void fantasyCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, 
     }
 }
 
+void fantasyCard::useReverseUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self,
+                                        Deck<card*> allyTeam, Deck<card*> enemyTeam){
+    if(reversePower && !card::isStunned()){
+        reversePower(target, battlefield, this, allyTeam, enemyTeam);
+    }
+}
+
 void fantasyCard::activateTypeBuff() {
     std::cout << "healing every fantasy card on the table and giving extra " << card::getCost() << "damage" << std::endl;
 }
@@ -77,7 +84,7 @@ std::string fantasyCard::getCardInfo() {
     }
     info << "\n";
 
-    info << "Special Ability: " << unique_ability << " (Power: " << unique_ability_effect_power << ")\n";
+    info << "Special Ability: " << unique_ability <<"\n";
     info << "======================================\n";
 
     return info.str();
