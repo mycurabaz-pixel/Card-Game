@@ -166,6 +166,9 @@ class card : public IDamageable {
 }
 
     void addEffect(DmgType hitType, Effect effect){
+
+        if(hitType == NORMAL){return;}
+        
         if(hitType == vulnurability){
             effect.damage *= 2;
         }

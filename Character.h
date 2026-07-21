@@ -1,12 +1,26 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
+#include"Effect.h"
 #include <string>
 #include <functional>
 #include <utility> // std::move
 #include "IDamageable.h"
 #include "Deck.h"
 #include "Card.h"
+
+enum DmgType{
+        ICE,
+        FIRE,
+        NATURE,
+        WIND,
+        MAGIC,
+        ANTIMAGIC,
+        DARKNESS,
+        LIGHT,
+        SLICE,
+        NORMAL
+    };
 
 // NOT: Bu sinif su an hicbir yerde kullanilmiyor (main akisi hala card tabanli calisiyor).
 // Icinde birkac hata var (asagida mesajda anlattim) ama senin verini bozmamak icin oldugu gibi biraktim.
@@ -15,6 +29,8 @@ class Character : public IDamageable {
         Deck<card*>& battlefield,
         Deck<card*>& allyTeam,
         Deck<card*>& enemyTeam)>;
+        std::map<DmgType, Effect> effects;
+
 
         private:
 
@@ -97,6 +113,23 @@ class Character : public IDamageable {
                 }
                 target->takeDamage(this, damage/3);
             }
+
+        void addEffect(DmgType hitType, Effect effect){
+
+        if(hitType == NORMAL){return;}
+
+        effect.damage *= 2;
+        if(auto it = effects.find(hitType); it != effects.end()){
+        effects.at(hitType).duration += effect.duration;
+    }
+        else{
+            effects.emplace(hitType, effect);
+        }
+    }
+
+    std::map<DmgType, Effect>& getEffects(){
+        return effects;
+    }
 };
 
 #endif // CHARACTER_H

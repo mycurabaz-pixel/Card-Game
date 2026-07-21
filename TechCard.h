@@ -29,7 +29,7 @@ class TechCard : public card {
 
     public:
 
-    TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int unique_ability_effect_power, int health, DmgType vulnurability, DmgType immunity, int powerDuration, int powerCost, AbilityFunction power, AbilityFunction reversePower)
+    TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int health, DmgType vulnurability, DmgType immunity, int powerDuration, int powerCost, AbilityFunction power, AbilityFunction reversePower)
     : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability, powerDuration, powerCost){
         this->unique_ability = unique_ability;
         this->tType = type;
