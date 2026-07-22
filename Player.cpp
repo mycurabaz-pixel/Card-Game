@@ -42,15 +42,19 @@ card* Player::selectCard(){
 }
 
 void Player::hitTarget(IDamageable* target, card* usedCard){
+    if(actionPoint == 0){return;}
     usedCard->hit(target);
+    actionPoint--;
     gameManager::getInstance().checkTargetHealth(nullptr);
 }
 
 void Player::useCardUniqueAbility(IDamageable* target, Deck<card*>& battlefield, card* used_card,
-                                  Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+    Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+    if(actionPoint == 0){return;}
     used_card->useUniquePower(target, battlefield, used_card, allyTeam, enemyTeam);
 
     activeCharacter->useMana(used_card->getAbilityCost());
+    actionPoint--;
 
     gameManager::getInstance().checkTargetHealth(nullptr);
 }

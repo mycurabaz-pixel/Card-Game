@@ -9,18 +9,7 @@
 #include "Deck.h"
 #include "Card.h"
 
-enum DmgType{
-        ICE,
-        FIRE,
-        NATURE,
-        WIND,
-        MAGIC,
-        ANTIMAGIC,
-        DARKNESS,
-        LIGHT,
-        SLICE,
-        NORMAL
-    };
+// DmgType artik Effect.h'den geliyor (yukarida include edildi) -> tek tanim.
 
 // NOT: Bu sinif su an hicbir yerde kullanilmiyor (main akisi hala card tabanli calisiyor).
 // Icinde birkac hata var (asagida mesajda anlattim) ama senin verini bozmamak icin oldugu gibi biraktim.
@@ -35,10 +24,11 @@ class Character : public IDamageable {
         private:
 
         std::string name;
-        int health, maxHealth, mana, maxMana, abilityCoolDown, currentCooldown = 0, abilityDuration, abilityCost;
+        int health, maxHealth, armor = 0, mana, maxMana, abilityCoolDown, currentCooldown = 0, abilityDuration, abilityCost;
         Ability ability, reverseAbility;
         bool invulnerable = false;
         bool reflection_marked = false;
+        bool stunned;
 
         public:
 
@@ -78,6 +68,8 @@ class Character : public IDamageable {
                 if(invulnerable && damage > 0) return;
 
                 if(maxHealth >= health - damage){
+                    if(damage > armor){damage -= armor; armor = 0;}
+                    else if(damage > 0){armor -= damage; return;}
                     health -= damage;
                 }
                     else if((health - damage) % maxHealth > damage){
@@ -106,6 +98,8 @@ class Character : public IDamageable {
             void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;}
             bool isInvulnerable(){return invulnerable;}
             bool isReflectionMarked(){return reflection_marked;}
+            void setStunned(bool stunned){this->stunned = stunned;}
+            bool isStunned(){return stunned;}
             void setReflectionMarked(bool reflection_marked){this->reflection_marked = reflection_marked;}
             void reflect(IDamageable* target, int damage){
                 if(target->isReflectionMarked()){
@@ -129,6 +123,14 @@ class Character : public IDamageable {
 
     std::map<DmgType, Effect>& getEffects(){
         return effects;
+    }
+
+    void addArmor(int armor){
+        this->armor += armor;
+    }
+
+    int getArmor() override {
+        return armor;
     }
 };
 

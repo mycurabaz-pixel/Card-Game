@@ -19,6 +19,7 @@ class Player {
     std::vector<card*> hand;
     Deck<card*> team;
     Character* activeCharacter = nullptr;
+    int actionPoint = 3, abilityPoint = 1;
 
     public:
 
@@ -59,7 +60,9 @@ class Player {
 
     
     bool useCharacterAbility(IDamageable* target, Deck<card*>& battlefield, Deck<card*>& enemyTeam){
+        if(abilityPoint == 0){return;}
         if(activeCharacter == nullptr) return false;
+        actionPoint--;
         return activeCharacter->tryUseAbility(target, battlefield, team, enemyTeam);
     }
 
@@ -76,6 +79,14 @@ class Player {
     int getCharacterAbilityDuration(){
         return activeCharacter ? activeCharacter->getAbilityDuration() : 0;
     }
+
+    void setActionAndAbilityPoint(int actionPoint, int abilityPoint){
+        this->actionPoint = actionPoint;
+        this->abilityPoint = abilityPoint;
+    }
+
+    int getActionPoint(){return actionPoint;}
+    int getAbilityPoint(){return abilityPoint;}
 
 };
 

@@ -441,13 +441,13 @@ void gameManager::startGame() {
             std::cout << "-> Ability: Entered rage mode!" << std::endl;
             if(self){
                 self->updateDmgHit(self->getDmgHit()*2);
-                self->setDamageType(card::SLICE);
+                self->setDamageType(SLICE);
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
             if(self){
                 self->updateDmgHit(self->getDmgHit()/2);
-                self->setDamageType(card::NORMAL);
+                self->setDamageType(NORMAL);
             }
         }
     ));
@@ -456,12 +456,11 @@ void gameManager::startGame() {
     // 20 TECH CARDS (With Lambda Abilities)
     // ==========================================
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Cyber Observer", 7, 4, "Laser", 25, card::DmgType::DARKNESS, card::DmgType::LIGHT, 0, 3,
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Cyber Observer", 5, 4, "Laser", 15, card::DmgType::LIGHTNING, card::DmgType::LIGHT, 0, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Locked onto the target!" << std::endl;
             auto targets = targeting::selectTargets(enemyTeam, 3);
-            int dmg = 3;
-            for(card* c : targets){ c->takeDamage(self, dmg); dmg;}
+            for(card* c : targets){ c->takeDamage(self, 3);}
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
             
@@ -469,7 +468,7 @@ void gameManager::startGame() {
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "High Tech Robot", 8, 5, "Plasma Shot", 30, card::DmgType::DARKNESS, card::DmgType::LIGHT, 0, 3,
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "High Tech Robot", 5, 5, "Plasma Shot", 20, card::DmgType::LIGHTNING, card::DmgType::LIGHT, 0, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Fired a plasma ball!" << std::endl;
             if(target){
@@ -482,178 +481,268 @@ void gameManager::startGame() {
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Chief Engineer", 3, 15, "Turret", 5, 45, card::DmgType::MAGIC, card::DmgType::NORMAL,
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Chief Engineer", 3, 2, "Turret", 10, card::DmgType::MAGIC, card::DmgType::NORMAL, 0, 1,
         [&](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
          std::cout << "-> Ability: Deployed an automatic turret!" << std::endl;
-         card* turret = new TechCard(1 ,card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Turret", 0, 5, "NONE", 0, 10, card::DmgType::MAGIC, card::DmgType::NORMAL,
-             [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){});
+         card* turret = new TechCard(1 ,card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Turret", 0, 2, "NONE", 5, card::DmgType::MAGIC, card::DmgType::NORMAL, 0, 0,
+             [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){},[](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){});
             battle_field.addCardToDeck(turret);
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
+{
+    auto originalTarget = std::make_shared<IDamageable*>(nullptr);
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Blacksmith Robot", 3, 12, "Repairment", 8, 90, card::DmgType::MAGIC, card::DmgType::NORMAL,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Blacksmith Robot", 3, 2, "Repairment", 9, card::DmgType::MAGIC, card::DmgType::SLICE, 2, 3,
+        [originalTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Repaired armor!" << std::endl;
-            target->takeDamage(self, -30);
+            target->addArmor(5);
+            (*originalTarget) = target;
+        },
+        [originalTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            (*originalTarget)->addArmor(-5);
         }
     ));
+}
 
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Pulse Guardian", 5, 32, "Shield", 25, 60, card::DmgType::SLICE, card::DmgType::MAGIC,
+        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Pulse Guardian", 5, 4, "Shield", 10, card::DmgType::SLICE, card::DmgType::MAGIC, 0, 4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Emitted an electromagnetic wave!" << std::endl;
-            if(target){
-                target->takeDamage(self, -20);
+            if(self){
+                self->addArmor(2);
             }
+            auto& effects = self->getEffects();
+            if(auto it = effects.find(LIGHTNING); it != effects.end()){
+                self->addArmor(it->second.duration * it->second.damage);
+                self->getEffects().erase(it);
+            }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Cyber Protector", 4, 28, "firewall shield", 20, 50, card::DmgType::SLICE, card::DmgType::MAGIC,
+        2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Cyber Protector", 4, 6, "firewall shield", 9, card::DmgType::SLICE, card::DmgType::MAGIC, 4, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Activated firewall shield!" << std::endl;
-            if(target){
-                target->takeDamage(self, -20);
-            }
+            self->addArmor(8);
+            Effect effect;
+            self->addEffect(FIRE, effect);
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            self->addArmor(-self->getArmor());
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Doomsday Tank", 8, 55, "Shock", 40, 200, card::DmgType::LIGHT, card::DmgType::DARKNESS,
+        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Doomsday Tank", 8, 7, "Shock", 15, card::DmgType::LIGHT, card::DmgType::DARKNESS, 0, 5,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Fired a nuclear missile!" << std::endl;
-            if(target){
-                target->takeDamage(self, 70);
-            }
+            for(card* c : pitch.getCards()){c->takeDamage(self, 7);}
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Goliath V2", 8, 58, "Pierceing Shot", 35, 500, card::DmgType::LIGHT, card::DmgType::DARKNESS,
+        1, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Goliath V2", 8, 7, "Pierceing Shot", 30, card::DmgType::LIGHT, card::DmgType::DARKNESS, 0, 5,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Pierced through with a railgun!" << std::endl;
             if(target){
-                target->takeDamage(self, 30);
+                target->takeDamage(self, 15);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
+{
+    auto originalTarget = std::make_shared<card*>();
+
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Light Drone", 2, 12, "Wave", 8, 10, card::DmgType::FIRE, card::DmgType::WIND,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Light Drone", 2, 2, "Wave", 1, card::DmgType::FIRE, card::DmgType::WIND, 1, 2,
+        [originalTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Activated the signal jammer!" << std::endl;
-            card* targetAsCard = dynamic_cast<card*>(target);
-            if(targetAsCard){
-                targetAsCard->updateDmgHit(targetAsCard->getDmgHit()/2);
+            (*originalTarget) = dynamic_cast<card*>(target);
+            if(originalTarget){
+                (*originalTarget)->updateDmgHit((*originalTarget)->getDmgHit()/2);
             }
             else{
                 std::cout << "This ability only can be used on a card" << std::endl;
             }
+        },
+        [originalTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            (*originalTarget)->updateDmgHit((*originalTarget)->getDmgHit()*2);
         }
     ));
+}
 
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Swift Jet", 3, 18, "Wave", 12, 140, card::DmgType::ICE, card::DmgType::WIND,
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Swift Jet", 3, 3, "Wave", 12, card::DmgType::ICE, card::DmgType::WIND, 0, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Caused a supersonic blast!" << std::endl;
             if(target){
-                target->takeDamage(self, 60);
+                target->takeDamage(self, 7);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::FIRE, TechCard::TechnoType::MECHANIC, "Pyro-Technician", 4, 20, "Explosion", 15, 60, card::DmgType::ICE, card::DmgType::FIRE,
+        2, card::DmgType::FIRE, TechCard::TechnoType::MECHANIC, "Pyro-Technician", 4, 4, "Explosion", 9, card::DmgType::ICE, card::DmgType::FIRE, 0, 4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Launched a napalm bomb!" << std::endl;
-            for(card* c:pitch.getCards()){
-                c->takeDamage(self, 40);
+            for(card* c:enemyTeam.getCards()){
+                c->takeDamage(self, 5);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
+{
+auto originalTarget = std::make_shared<IDamageable*>();
+
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::ICE, TechCard::TechnoType::SOLDIER, "Freezing Android", 4, 26, "Shield", 14, 75, card::DmgType::FIRE, card::DmgType::ICE,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        1, card::DmgType::ICE, TechCard::TechnoType::SOLDIER, "Freezing Android", 4, 4, "Nitrogen", 10, card::DmgType::FIRE, card::DmgType::ICE, 1, 3,
+        [originalTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Sprayed liquid nitrogen!" << std::endl;
+            (*originalTarget) = target;
+            target->setStunned(true);
+            target->setInvulnerable(true);
+        },
+        [originalTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            (*originalTarget)->setStunned(false);
+            (*originalTarget)->setInvulnerable(false);
         }
     ));
+}
 
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::NATURE, TechCard::TechnoType::ROBOT, "Bio-Mechanical Golem", 5, 30, "Laser", 22, 150, card::DmgType::FIRE, card::DmgType::NATURE,
+        2, card::DmgType::NATURE, TechCard::TechnoType::ROBOT, "Bio-Mechanical Golem", 5, 3, "Organic Energy", 15, card::DmgType::FIRE, card::DmgType::NATURE, 2, 4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Activated organic batteries!" << std::endl;
             if(self){
                 self->updateDmgHit(self->getDmgHit()*3);
+                self->addArmor(3);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            self->updateDmgHit(self->getDmgHit()/3);
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::MAGIC, TechCard::TechnoType::TITAN, "Rune Circuit", 7, 40, "Shock", 30, 40, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC,
+        3, card::DmgType::MAGIC, TechCard::TechnoType::TITAN, "Rune Circuit", 7, 4, "Rune Buff", 12, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC, 0, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Triggered a magical overload!" << std::endl;
-            if(self){
-                self->updateDmgHit(self->getDmgHit()*3);
+
+            auto targets = targeting::selectTargets(allyTeam, 3);
+
+            for(card* c: targets){
+                c->updateDmgHit(c->getDmgHit() + 1);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Saw Robot", 3, 24, "Slice and Dice", 10, 80, card::DmgType::MAGIC, card::DmgType::NORMAL,
+        1, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Saw Robot", 3, 4, "Slice and Dice", 8, card::DmgType::MAGIC, card::DmgType::NORMAL,0,4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Overclocked the blades!" << std::endl;
-            if(target){
-                target->takeDamage(self, 40);
+            Effect bleed = {2,4,0};
+            if(card* tempTarget = dynamic_cast<card*>(target)){
+                tempTarget->takeDamage(self, 2);
+                tempTarget->addEffect(SLICE, bleed);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Quantum Reflector", 5, 23, "Laser", 16, 40, card::DmgType::DARKNESS, card::DmgType::LIGHT,
+        3, card::DmgType::LIGHT, TechCard::TechnoType::ROBOT, "Quantum Reflector", 5, 2, "Laser", 6, card::DmgType::DARKNESS, card::DmgType::LIGHT, 2 , 4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Bent light to become invisible!" << std::endl;
+            if(self->isInvulnerable() == true){return;}
+
+            self->setInvulnerable(true);
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            self->setInvulnerable(false);
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Repair Unit", 2, 10, "Nanorobot treatment", 12, 40, card::DmgType::MAGIC, card::DmgType::NORMAL,
+        1, card::DmgType::NORMAL, TechCard::TechnoType::MECHANIC, "Repair Unit", 2, 1, "Nanorobot treatment", 7, card::DmgType::MAGIC, card::DmgType::NORMAL, 0, 2,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Started repairs with nanobots!" << std::endl;
             for(card* c:allyTeam.getCards()){
-                c->takeDamage(self, -10);
+                c->takeDamage(self, -2);
             }
-        }
-    ));
+        },
+           [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
+        }     
+   ));
+
+{
+    auto originals = std::make_shared<std::vector<card*>>();
 
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Dark Matter Armor", 9, 60, "black shield", 45, 50, card::DmgType::LIGHT, card::DmgType::DARKNESS,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        2, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Dark Matter Armor", 9, 0, "black shield", 30, card::DmgType::LIGHT, card::DmgType::DARKNESS, 1, 9,
+        [originals](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Created a black hole!" << std::endl;
-            if(target){
-                target->takeDamage(self, -30);
-            }
+            auto targets = targeting::selectTargets(allyTeam, 3);
+            (*originals) = targets;
+            for(card* c: targets){c->addArmor(self->getHealth()/3); c->setInvulnerable(true);}
+            self->takeDamage(self, self->getHealth());
+        },
+        [originals](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            for(card* c : (*originals)){c->setInvulnerable(false);}
         }
     ));
+}
 
     master_deck.addCardToDeck(new TechCard(
-        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Sonic Copter", 3, 15, "Wave", 10, 50, card::DmgType::ICE, card::DmgType::WIND,
+        3, card::DmgType::WIND, TechCard::TechnoType::ROBOT, "Sonic Copter", 3, 2, "Breeze", 5, card::DmgType::ICE, card::DmgType::WIND, 0, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Blew away with propeller wind!" << std::endl;
             for(card* c: enemyTeam.getCards()){
-                c->takeDamage(self, 10);
+                c->takeDamage(self, 1);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new TechCard(
-        2, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Cybernetic Ninja", 4, 34, "Techno Slash", 18, 40, card::DmgType::MAGIC, card::DmgType::NORMAL,
+        2, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Cybernetic Ninja", 4, 5, "Techno Slash", 8, card::DmgType::MAGIC, card::DmgType::NORMAL, 2, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Emitted a katana shockwave!" << std::endl;
             if(self){
                 self->updateDmgHit(self->getDmgHit()*2);
+                self->setDamageType(LIGHTNING);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            self->updateDmgHit(self->getDmgHit()/2);
+            self->setDamageType(SLICE);
         }
     ));
 
@@ -888,6 +977,8 @@ void gameManager::playTurn(){
 
         tickCharacters(); // her tur sonunda: karakter cooldown'lari azalir + suresi dolan etkiler geri alinir
         tickCards();
+        player1.setActionAndAbilityPoint(3, 1);
+        player2.setActionAndAbilityPoint(3, 1);
         tour_counter++;   // tam bir tur bitti
 }
 
@@ -1021,7 +1112,7 @@ void gameManager::tickCharacters(){
     for(auto it = timed_abilities.begin(); it != timed_abilities.end(); ){
         if(tour_counter >= it->expireTurn){
             it->source->revertCharacterAbility(it->target, battle_field,
-                                               it->source->getTeam(), it->enemy->getTeam());
+            it->source->getTeam(), it->enemy->getTeam());
             it = timed_abilities.erase(it);
         } else {
             ++it;

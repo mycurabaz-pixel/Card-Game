@@ -14,18 +14,9 @@ class card : public IDamageable {
 
     public:
 
-    enum DmgType{
-        ICE,
-        FIRE,
-        NATURE,
-        WIND,
-        MAGIC,
-        ANTIMAGIC,
-        DARKNESS,
-        LIGHT,
-        SLICE,
-        NORMAL
-    };
+    // DmgType artik Effect.h'de global tanimli (tek kaynak).
+    // Bu alias sayesinde mevcut 'card::DmgType::FIRE' kullanimlari aynen calismaya devam eder.
+    using DmgType = ::DmgType;
 
     private:
 
@@ -50,6 +41,7 @@ class card : public IDamageable {
     bool reflection_marked = false;
     int powerCost;
     int powerDuration;
+    int armor;
 
 
     public:
@@ -104,19 +96,18 @@ class card : public IDamageable {
     }
 
     void takeDamage(IDamageable* attacker, int damage) override{
-            if(invulnerable && damage > 0) return; 
-            
-            if(maxHealth >= health - damage){
-                health -= damage;
-            }
-                else if((health - damage) % maxHealth > damage){
-            health = maxHealth;
-            }
+                if(invulnerable && damage > 0) return;
 
-            // [GUARD] attacker null olabilir (DOT, karakter iyilestirmesi vb.) -> null'da yansitma yok.
-            // damage > 0 sarti da eklendi: iyilestirmeler (negatif damage) yansimaz.
-            if(attacker && damage > 0 && isReflectionMarked()){ reflect(attacker, damage); }
-        }
+                if(maxHealth >= health - damage){
+                    if(damage > armor){damage -= armor; armor = 0;}
+                    else if(damage > 0){armor -= damage; return;}
+                    health -= damage;
+                }
+                    else if((health - damage) % maxHealth > damage){
+                health = maxHealth;
+                }
+                if(attacker && damage > 0 && isReflectionMarked()){ reflect(attacker, damage); }
+            }
 
     int getHealth() override {
         return health;
@@ -184,6 +175,14 @@ class card : public IDamageable {
 
     std::map<DmgType, Effect>& getEffects(){
         return effects;
+    }
+
+    void addArmor(int armor){
+        this->armor += armor;
+    }
+
+    int getArmor() override{
+        return armor;
     }
 
     virtual ~card();

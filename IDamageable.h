@@ -13,6 +13,12 @@ public:
     virtual void reflect(IDamageable* target, int damage) = 0;
     virtual bool isReflectionMarked() = 0;
     virtual void setReflectionMarked(bool reflection_marked) = 0;
+    virtual void addArmor(int armor) = 0;
+    virtual int getArmor() = 0;
+    virtual void setStunned(bool stunned) = 0;
+    virtual bool isStunned() = 0;
+    virtual void setInvulnerable(bool invulnerable) = 0;
+    virtual bool isInvulnerable() = 0;
 };
 
 #endif // IDAMAGEABLE_H
