@@ -46,6 +46,7 @@ class gameManager {
     void setPlayers(std::string player1_name, std::string player2_name);
     void startGame();
     void playTurn();
+    void advanceTurn();   // [YENI] tur sonu (cin yok) - hem konsol hem GUI kullanir
     void executeEffects();
     void run();
     void checkTargetHealth(IDamageable* target);
@@ -53,6 +54,15 @@ class gameManager {
     void useCardAbility(Player& user, Player& enemy, IDamageable* target, card* usedCard);
     void tickCharacters();
     void tickCards();
+    void endGame();
+
+    // --- [GUI ICIN EKLENDI] Sadece okuma erisimi; oyun mantigini degistirmez.
+    //     GUI tahtayi cizebilmek icin bu verilere ulasmak zorunda.
+    Player& getPlayer1(){ return player1; }
+    Player& getPlayer2(){ return player2; }
+    Deck<card*>& getBattlefield(){ return battle_field; }
+    std::map<std::string, Character*>& getCharacterPool(){ return character_pool; }
+    int getTourCounter() const { return tour_counter; }
 
 };
 

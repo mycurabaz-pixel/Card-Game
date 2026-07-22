@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include<stack>
 #include "IDamageable.h"
 #include "Deck.h"
 #include "Card.h"
@@ -20,6 +21,8 @@ class Player {
     Deck<card*> team;
     Character* activeCharacter = nullptr;
     int actionPoint = 3, abilityPoint = 1;
+    std::stack<card*> graveyard;
+    
 
     public:
 
@@ -34,9 +37,13 @@ class Player {
         yourDeck.addCardToDeck(c);
     }
 
+    std::vector<card*> getHand(){
+        return hand;
+    }
+
     // Govdesi cout/cin veya gameManager kullandigi icin tanimlar Player.cpp'de:
     void drawCard();
-    void playCard(card* played_card, Deck<card*>& battlefield);
+    bool playCard(card* played_card, Deck<card*>& battlefield);   // [DEGISIKLIK] void -> bool (mana yetmezse false)
     card* selectCard();
     void hitTarget(IDamageable* target, card* usedCard);
     void useCardUniqueAbility(IDamageable* target, Deck<card*>& battlefield, card* used_card,
@@ -52,6 +59,12 @@ class Player {
     void addToTeam(card* c) { team.addCardToDeck(c); }
     Deck<card*>& getTeam() { return team; }
 
+    // [GUI ICIN EKLENDI] GUI elindeki kartlari cizebilmek icin okumali.
+    const std::vector<card*>& getHand() const { return hand; }
+
+    // [GUI ICIN EKLENDI] Yandaki deste sayacini gosterebilmek icin.
+    Deck<card*>& getDeck() { return yourDeck; }
+
     void setCharacter(Character* activeCharacter) {this->activeCharacter = activeCharacter; }
 
     Character* getCharacter(){return activeCharacter;}
@@ -60,8 +73,7 @@ class Player {
 
     
     bool useCharacterAbility(IDamageable* target, Deck<card*>& battlefield, Deck<card*>& enemyTeam){
-        if(abilityPoint == 0){return;}
-        if(activeCharacter == nullptr) return false;
+        if(activeCharacter == nullptr && abilityPoint == 0) return false;
         actionPoint--;
         return activeCharacter->tryUseAbility(target, battlefield, team, enemyTeam);
     }
@@ -87,6 +99,8 @@ class Player {
 
     int getActionPoint(){return actionPoint;}
     int getAbilityPoint(){return abilityPoint;}
+
+    std::stack<card*>& getGraveyard(){return graveyard;}
 
 };
 

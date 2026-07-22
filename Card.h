@@ -39,9 +39,11 @@ class card : public IDamageable {
     bool invulnerable = false;
     bool stunned = false;
     bool reflection_marked = false;
+    bool dead = false;
     int powerCost;
     int powerDuration;
     int armor;
+    bool active = false;
 
 
     public:
@@ -126,6 +128,8 @@ class card : public IDamageable {
         this->maxHealth = maxHealth;
     }
 
+    int getMaxHealth(){return maxHealth;}
+
     std::string getName() override {
         return cardName;
     }
@@ -142,6 +146,10 @@ class card : public IDamageable {
         return owner;
     }
 
+    void setActive(bool active){this->active = active;}
+    bool isActive(){return active;}
+    bool isDead(){return dead;}
+    void setDead(bool dead){this->dead = dead;}
     int getAbilityCost(){return powerCost;}
     void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;} // [DUZELTME] == degil =
     bool isInvulnerable(){return invulnerable;}

@@ -54,6 +54,10 @@ class Deck {
         return active_deck.empty();
     }
 
+    // [GUI ICIN EKLENDI] Destede kac kart kaldi (cekilebilir olanlar).
+    // getCards() tum kartlari dondurur ve cekince azalmaz; bu ise azalir.
+    int remaining() const { return (int)active_deck.size(); }
+
     const std::vector<T>& getCards() const {
         return deck;
     }

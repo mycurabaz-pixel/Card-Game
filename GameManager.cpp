@@ -115,7 +115,7 @@ void gameManager::startGame() {
         auto knife_counter = std::make_shared<int>(0);
         auto hit_by_knife = std::make_shared<std::vector<std::pair<IDamageable*, int>>>();
 
-        character_pool.emplace("Knife Master", new Character("Kont", 110, 13, 1, 0, 3, [knife_counter, hit_by_knife](IDamageable* target, Deck<card*>& battlefield,
+        character_pool.emplace("Knife Master", new Character("Kont", 110, 13, 1, 0, 1, [knife_counter, hit_by_knife](IDamageable* target, Deck<card*>& battlefield,
                         Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
                             target->takeDamage(nullptr, 2);
                             bool found = false;
@@ -306,7 +306,7 @@ void gameManager::startGame() {
     ));
 
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::WIND, fantasyCard::FantasyType::DRAGON, "Storm Dragon", 7, 7, "Lightning Breath", 25, card::DmgType::MAGIC, card::DmgType::WIND, 0, 6,
+        1, card::DmgType::LIGHTNING, fantasyCard::FantasyType::DRAGON, "Storm Dragon", 7, 7, "Lightning Breath", 25, card::DmgType::MAGIC, card::DmgType::LIGHTNING, 0, 6,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Created a hurricane!" << std::endl;
             auto targets = targeting::selectTargets(enemyTeam, 3);
@@ -683,6 +683,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
             self->setInvulnerable(true);
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            if(self->isDead()){return;}
             self->setInvulnerable(false);
         }
     ));
@@ -713,7 +714,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
             self->takeDamage(self, self->getHealth());
         },
         [originals](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
-            for(card* c : (*originals)){c->setInvulnerable(false);}
+            for(card* c : (*originals)){if(c->isDead()){continue;} c->setInvulnerable(false);}
         }
     ));
 }
@@ -741,6 +742,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            if(self->isDead()){return;}
             self->updateDmgHit(self->getDmgHit()/2);
             self->setDamageType(SLICE);
         }
@@ -749,173 +751,297 @@ auto originalTarget = std::make_shared<IDamageable*>();
     // ==========================================
     // 20 SEA SON CARDS (With Lambda Abilities)
     // ==========================================
-    master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Nightmare Kraken", 9, 60, "Vortex", 50, 400, card::DmgType::LIGHT, card::DmgType::DARKNESS,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
-            std::cout << "-> Ability: Cast a deep sea curse!" << std::endl;
-            for(card* c:enemyTeam.getCards()){
-                c->setHealth(c->getHealth()/2);
-            }
-        }
-    ));
+    {
+        auto originals = std::make_shared<std::vector<card*>>();
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Leviathan", 9, 65, "Tsunami", 45, 450, card::DmgType::LIGHT, card::DmgType::DARKNESS,
+        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Nightmare Kraken", 9, 6, "Vortex", 30, card::DmgType::LIGHT, card::DmgType::DARKNESS, 2, 6,
+        [originals](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            std::cout << "-> Ability: Cast a deep sea curse!" << std::endl;
+            (*originals) = enemyTeam.getCards();
+            for(card* c:enemyTeam.getCards()){
+                c->takeDamage(self, 5);
+                c->setMaxHealth(c->getMaxHealth() - 5);
+            }
+        },
+        [originals](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            for(card* c: (*originals)){c->setMaxHealth(c->getMaxHealth() + 5);}
+        }
+    ));
+}
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::KRAKEN, "Leviathan", 9, 7, "Tsunami", 35, card::DmgType::LIGHT, card::DmgType::DARKNESS, 0, 7,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Started a tsunami!" << std::endl;
             for(card* c: pitch.getCards()){
-                c->takeDamage(self, 15);
+                c->takeDamage(self, 7);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Coral Healer", 3, 8, "Wave", 18, 35, card::DmgType::FIRE, card::DmgType::NATURE,
+        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Coral Healer", 3, 2, "Wave", 10, card::DmgType::FIRE, card::DmgType::NATURE, 0, 2,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Active coral healing!" << std::endl;
-            target->takeDamage(self, -20);
+            target->takeDamage(self, -7);
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Mermaid", 3, 9, "Song of the sea", 16, 30, card::DmgType::FIRE, card::DmgType::NATURE,
+        2, card::DmgType::NATURE, SeaSonCard::SeaSonType::MEDIC, "Mermaid", 3, 1, "Song of the sea", 11, card::DmgType::FIRE, card::DmgType::NATURE, 0, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Sang the current song!" << std::endl;
             for(card* c: allyTeam.getCards()){
-                c->takeDamage(self, -5);
+                c->setMaxHealth(c->getMaxHealth() + 2);
+                c->takeDamage(self, -2);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Blackbeard", 4, 35, "Boarding", 14, 70, card::DmgType::MAGIC, card::DmgType::NORMAL,
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Blackbeard", 4, 4, "Boarding", 12, card::DmgType::MAGIC, card::DmgType::NORMAL, 0, 5,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Executed a boarding attack!" << std::endl;
+            for(card* c: allyTeam.getCards()){
+                int tempDmg = c->getDmgHit();
+                c->setActive(true);
+                c->updateDmgHit(c->getDmgHit()/4);
+                c->hit(target);
+                c->updateDmgHit(tempDmg);
+                c->setActive(true);
+            }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Captain Barbarossa", 5, 5, "Blast", 10, card::DmgType::MAGIC, card::DmgType::NORMAL, 0, 4,
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            std::cout << "-> Ability: Subjected the fleet to cannon fire!" << std::endl;
+            for(card* c : enemyTeam.getCards()){
+                c->takeDamage(self, 3);
+            }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
+        }
+    ));
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Sea Oracle", 5, 1, "Deluge", 7, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC, 0, 5,
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            std::cout << "-> Ability: Saw the storm of the future!" << std::endl;
+            if(Character* tempTarget = dynamic_cast<Character*>(target)){
+                for(card* c :tempTarget->getOwner()->getHand()){
+                    c->getCardInfo();
+                }
+        }
+    },
+    [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
+    }
+    ));
+
+{
+    auto tempTarget = std::make_shared<card*>(nullptr);
+
+    master_deck.addCardToDeck(new SeaSonCard(
+        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Siren Song", 4, 1, "Deluge", 12, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC, 2, 8,
+        [tempTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            std::cout << "-> Ability: Charmed the enemy !" << std::endl;
+            if(card* tTarget = dynamic_cast<card*>(target)){(*tempTarget) = tTarget;}
             for(card* c: enemyTeam.getCards()){
-                c->takeDamage(self, 10);
+                if(target == c){
+                    allyTeam.addCardToDeck(c);
+                    enemyTeam.removeCardFromDeck(c);
+                }
+            }
+        },
+        [tempTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                for(card* c: allyTeam.getCards()){
+                if((*tempTarget) == c){
+                    allyTeam.removeCardFromDeck(c);
+                    enemyTeam.addCardToDeck(c);
+                }
             }
         }
     ));
+}
+
+
+{
+    auto original = std::make_shared<IDamageable*>(nullptr);
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::PIRATE, "Captain Barbarossa", 5, 38, "Blast", 12, 70, card::DmgType::MAGIC, card::DmgType::NORMAL,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
-            std::cout << "-> Ability: Subjected the fleet to cannon fire!" << std::endl;
-            target->takeDamage(self, 40);
-        }
-    ));
-
-    master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Sea Oracle", 5, 20, "Deluge", 30, 50, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
-            std::cout << "-> Ability: Saw the storm of the future!" << std::endl;
-        }
-    ));
-
-    master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Siren Song", 4, 18, "Deluge", 25, 100, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
-            std::cout << "-> Ability: Charmed the enemy card!" << std::endl;
-        }
-    ));
-
-    master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ICE, SeaSonCard::SeaSonType::PIRATE, "Arctic Raider", 4, 27, "Anchor", 11, 40, card::DmgType::FIRE, card::DmgType::ICE,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::PIRATE, "Arctic Raider", 4, 4, "Anchor", 10, card::DmgType::FIRE, card::DmgType::ICE, 1, 2,
+        [original](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Fired a frozen harpoon!" << std::endl;
-            target->takeDamage(self, 30);
+            (*original) = target;
+            target->takeDamage(self, 4);
+            target->setStunned(true);
+            target->setInvulnerable(true);
+        },
+        [original](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            (*original)->setStunned(false);
+            (*original)->setInvulnerable(false);
         }
     ));
+}
 
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ICE, SeaSonCard::SeaSonType::KRAKEN, "Frozen Giant Octopus", 7, 44, "Deep frozen", 28, 300, card::DmgType::FIRE, card::DmgType::ICE,
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::KRAKEN, "Frozen Giant Octopus", 7, 7, "Deep frozen", 25, card::DmgType::FIRE, card::DmgType::ICE, 0, 6,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Threw an ice sheet with tentacles!" << std::endl;
-            target->takeDamage(self, 60);
+            target->takeDamage(self, 20);
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Pirate Cannoneer", 4, 33, "Blast", 15, 35, card::DmgType::ICE, card::DmgType::FIRE,
+        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Pirate Cannoneer", 4, 2, "Blast", 9, card::DmgType::ICE, card::DmgType::FIRE, 0, 4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Used Greek fire!" << std::endl;
             for(card* c: enemyTeam.getCards()){
-                c->takeDamage(self, 5);
+                Effect effect ={2,4,0};
+                c->addEffect(FIRE, effect);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::WIND, SeaSonCard::SeaSonType::ORACLE, "Stormbringer", 5, 21, "Deluge", 22, 55, card::DmgType::MAGIC, card::DmgType::WIND,
+        3, card::DmgType::WIND, SeaSonCard::SeaSonType::ORACLE, "Stormbringer", 5, 2, "Deluge", 7, card::DmgType::MAGIC, card::DmgType::WIND, 0, 2,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Blew a capsizing wind!" << std::endl;
-            target->takeDamage(self, 30);
-        }
+            for(card* c: enemyTeam.getCards()){c->takeDamage(self, 2);}
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
+    }
     ));
 
+
+{
+    auto original = std::make_shared<IDamageable*>(nullptr);
+
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::LIGHT, SeaSonCard::SeaSonType::MEDIC, "Sea Glow Sprite", 3, 10, "Night Glow", 20, 80, card::DmgType::DARKNESS, card::DmgType::LIGHT,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        2, card::DmgType::LIGHT, SeaSonCard::SeaSonType::MEDIC, "Sea Glow Sprite", 3, 3, "Night Glow", 8, card::DmgType::DARKNESS, card::DmgType::LIGHT, 1, 3,
+        [original](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            (*original) = target;
             std::cout << "-> Ability: Blinded with a night glow!" << std::endl;
+            target->setStunned(true);
+        },
+        [original](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            (*original)->setStunned(false);
         }
     ));
+}
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::NORMAL, SeaSonCard::SeaSonType::PIRATE, "Ship Crew", 1, 12, "Drunken sailor", 4, 25, card::DmgType::MAGIC, card::DmgType::NORMAL,
+        1, card::DmgType::NORMAL, SeaSonCard::SeaSonType::PIRATE, "Ship Crew", 1, 2, "Drunken sailor", 5, card::DmgType::MAGIC, card::DmgType::NORMAL, 0, 1,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Threw a rum bottle!" << std::endl;
-            target->takeDamage(self, 10);
+            target->takeDamage(self, 5);
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ANTIMAGIC, SeaSonCard::SeaSonType::ORACLE, "Deepwater Guardian", 6, 26, "Deluge", 18, 90, card::DmgType::NORMAL, card::DmgType::MAGIC,
+        2, card::DmgType::ANTIMAGIC, SeaSonCard::SeaSonType::ORACLE, "Deepwater Guardian", 6, 6, "Deluge", 14, card::DmgType::NORMAL, card::DmgType::MAGIC, 0, 5,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Will drown the magic shield in a vortex!" << std::endl;
+            for(card* c : allyTeam.getCards()){c->addArmor(4);}
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::KRAKEN, "Razor Tentacle", 6, 40, "Eight Slash", 20, 350, card::DmgType::MAGIC, card::DmgType::NORMAL,
+        1, card::DmgType::SLICE, SeaSonCard::SeaSonType::KRAKEN, "Razor Tentacle", 6, 5, "Triple Slash", 30, card::DmgType::MAGIC, card::DmgType::NORMAL, 0, 4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Sharp tentacle slash!" << std::endl;
-            for(card* c: enemyTeam.getCards()){
-                c->takeDamage(self, 20);
-            }
+            auto targets = targeting::selectTargets(enemyTeam, 3);
+            Effect effect = {2,3,0};
+            for(card* c: targets){c->takeDamage(self, 6); c->addEffect(SLICE, effect);}
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){  
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ICE, SeaSonCard::SeaSonType::MEDIC, "Glacial Savior", 4, 12, "Healing Wave", 14, 55, card::DmgType::FIRE, card::DmgType::ICE,
+        2, card::DmgType::ICE, SeaSonCard::SeaSonType::MEDIC, "Glacial Savior", 4, 1, "Healing Wave", 12, card::DmgType::FIRE, card::DmgType::ICE, 0, 3,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Performed cold water shock therapy!" << std::endl;
             for(card* c: allyTeam.getCards()){
-                c->takeDamage(self, -10);
+                c->takeDamage(self, -3);
             }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
+    {
+        auto original = std::make_shared<IDamageable*>(nullptr);
     master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::ORACLE, "Abyss Witch", 5, 22, "Darkness of the deep sea", 26, 60, card::DmgType::LIGHT, card::DmgType::DARKNESS,
-        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        3, card::DmgType::DARKNESS, SeaSonCard::SeaSonType::ORACLE, "Abyss Witch", 5, 4, "Darkness of the deep sea", 9, card::DmgType::LIGHT, card::DmgType::DARKNESS, 1, 5,
+        [original](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Mariana trench darkness!" << std::endl;
-            target->takeDamage(self, 35);
+            (*original) = target;
+            target->takeDamage(self, 4);
+            target->setStunned(true);
+            
+        },
+        [original](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            (*original)->setStunned(false);
         }
     ));
+    }   // [DUZELTME] satir 1004'te acilan '{' blogunun kapanisi eksikti
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Lava Captain", 5, 36, "Lava shot", 16, 75, card::DmgType::ICE, card::DmgType::FIRE,
+        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Lava Captain", 5, 4, "Lava shot", 11, card::DmgType::ICE, card::DmgType::FIRE, 0, 5,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Volcanic pirate attack!" << std::endl;
-            target->takeDamage(self, 45);
+            if(card* tempTarget = dynamic_cast<card*>(target)){
+            target->takeDamage(self, 6);
+            Effect effect = {2, 3, 0};
+            tempTarget->addEffect(FIRE, effect);
+            }
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::WIND, SeaSonCard::SeaSonType::MEDIC, "Monsoon Healer", 3, 11, "Wind therapy", 12, 40, card::DmgType::MAGIC, card::DmgType::WIND,
+        2, card::DmgType::WIND, SeaSonCard::SeaSonType::MEDIC, "Monsoon Healer", 3, 2, "Wind therapy", 6, card::DmgType::MAGIC, card::DmgType::WIND, 0, 2,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Humid storm healing!" << std::endl;
-            target->takeDamage(self, -25);
+            target->takeDamage(self, 3);
+            target->addArmor(3);
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+            
         }
     ));
 
@@ -966,6 +1092,12 @@ void gameManager::playTurn(){
         turn_counter++;
     }
 
+    advanceTurn();   // tur sonu islemleri (cin icermez -> GUI de ayni fonksiyonu kullanir)
+}
+
+// Turu ilerleten, ETKILESIM ICERMEYEN kisim.
+// playTurn (konsol) ve GUI'nin "Turu Bitir" dugmesi ayni mantigi kullansin diye ayrildi.
+void gameManager::advanceTurn(){
     // [DUZELTME] Karakter atanmamissa getCharacter() nullptr doner -> once kontrol et,
     // yoksa nullptr uzerinden setMana cagrilir ve program coker.
     if(player1.hasCharacter())
@@ -979,6 +1111,7 @@ void gameManager::playTurn(){
         tickCards();
         player1.setActionAndAbilityPoint(3, 1);
         player2.setActionAndAbilityPoint(3, 1);
+        for(card* c : battle_field.getCards()){c->setActive(true);}
         tour_counter++;   // tam bir tur bitti
 }
 
@@ -1030,7 +1163,7 @@ void gameManager::run() {
                 playTurn();
                 break;
             case 3:
-                isRunning = false;
+                endGame();
                 std::cout << "Cikis yapiliyor..." << std::endl;
                 break;
             default:
@@ -1050,7 +1183,10 @@ void gameManager::checkTargetHealth(IDamageable* target) {
             std::cout << c->getName() << " died!" << std::endl;
             battle_field.removeCardFromDeck(c);
             // [DEGISIKLIK] owner nullptr olabilir (orn. Turret'in sahibi yok) -> once kontrol
+            c->getEffects().clear();
             if (c->getOwner()) c->getOwner()->getTeam().removeCardFromDeck(c);
+            if(c->getOwner()) c->getOwner()->getGraveyard().push(c);
+            c->setDead(true);
         }
         return;
     }
@@ -1133,4 +1269,8 @@ void gameManager::tickCards(){
             ++it;
         }
     }
+}
+
+void gameManager::endGame(){
+    if(player1.getCharacter()->getHealth() == 0 || player2.getCharacter()->getHealth() == 0){isRunning == false;}
 }

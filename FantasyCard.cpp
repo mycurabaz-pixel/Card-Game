@@ -16,7 +16,8 @@ void fantasyCard::random_unique_dmg(){
 }
 
 void fantasyCard::hit(IDamageable* target) {
-    if(!card::isStunned()){
+    if(!card::isStunned() && isActive()){
+        setActive(false);
         random_unique_dmg();
 
     target->takeDamage(this, card::getDmgHit());
@@ -34,7 +35,8 @@ void fantasyCard::hit(IDamageable* target) {
 }
 
 void fantasyCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) {
-    if(uniquePower && !card::isStunned()){
+    if(uniquePower && !card::isStunned() && isActive()){
+        setActive(false);
         uniquePower(target, battlefield, this, allyTeam, enemyTeam);
     }
 }

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Project:Kangreya</title>
+<style>
+  :root{
+    --wood:#5a3f24; --wood2:#3a2814; --edge:#1c1108;
+    --gold:#b8912f; --gold2:#f0d97a;
+    --parch:#e9dcbf; --parch2:#cdb98d; --ink:#2b2118; --mana:#3a5f8a;
+    --stone:#6d5f4b; --arena:#4a3a26;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Georgia","Book Antiqua","Times New Roman",serif; color:var(--parch);
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(120,90,50,.25), transparent 60%),
+      repeating-linear-gradient(90deg, #3a2814 0px, #3a2814 38px, #34230f 38px, #34230f 76px),
+      linear-gradient(#2e2011, #170d05);
+    height:100vh; overflow:hidden; user-select:none;
+  }
+  .screen{display:none; height:100vh;}
+  .screen.on{display:flex;}
+
+  /* ---------- 1. TITLE ---------- */
+  #scTitle{flex-direction:column; align-items:center; justify-content:center; gap:26px;}
+  #scTitle h1{
+    font-size:66px; letter-spacing:9px; color:var(--gold2);
+    text-shadow:0 0 26px rgba(184,145,47,.6), 0 4px 0 #5a4514, 0 5px 8px #000;
+  }
+  #scTitle .sub{letter-spacing:6px; opacity:.75; font-size:14px;}
+  .bigbtn{
+    font-family:inherit; font-size:19px; letter-spacing:3px; padding:14px 46px; cursor:pointer;
+    background:linear-gradient(var(--parch),var(--parch2)); color:var(--ink);
+    border:2px solid var(--gold); border-radius:6px; box-shadow:0 4px 10px #000a;
+  }
+  .bigbtn:hover{background:linear-gradient(var(--gold2),var(--gold));}
+
+  /* ---------- 2. NAMES ---------- */
+  #scNames{flex-direction:column; align-items:center; justify-content:center; gap:18px;}
+  #scNames h2{color:var(--gold2); letter-spacing:3px; margin-bottom:8px;}
+  .field{display:flex; gap:12px; align-items:center; font-size:15px;}
+  .field label{width:80px;}
+  .field input{
+    font-family:inherit; font-size:15px; padding:9px 12px; width:250px;
+    background:var(--parch); color:var(--ink); border:2px solid var(--gold); border-radius:4px;
+  }
+
+  /* ---------- 3. CHARACTER SELECT ---------- */
+  #scChar{flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px;}
+  #scChar h2{color:var(--gold2); letter-spacing:3px;}
+  #charWho{font-size:17px;}
+  .charGrid{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; max-width:1080px;}
+  .charCard{
+    width:200px; padding:14px; border-radius:8px; cursor:pointer; text-align:center;
+    background:linear-gradient(160deg,var(--parch),var(--parch2)); color:var(--ink);
+    border:2px solid #7a5f2e; box-shadow:0 4px 12px #000a;
+  }
+  .charCard:hover{border-color:var(--gold2); transform:translateY(-5px);}
+  .charCard.taken{filter:grayscale(1) brightness(.6); cursor:not-allowed; transform:none;}
+  .charCard .cn{font-weight:bold; font-size:15px; margin-bottom:6px;}
+  .charCard .ck{font-size:11px; font-style:italic; opacity:.75; margin-bottom:8px;}
+  .charCard .cs{font-size:12px;}
+
+  /* ---------- 4. GAME BOARD ---------- */
+  #scGame{flex-direction:column;}
+  header{
+    padding:8px 16px; border-bottom:3px solid var(--gold);
+    background:linear-gradient(#3a2814,#241708); display:flex; align-items:center; gap:14px;
+  }
+  header h1{font-size:16px; color:var(--gold2); letter-spacing:3px;}
+  .spacer{flex:1;}
+  .turnBadge{padding:5px 14px; border-radius:14px; font-size:13px; letter-spacing:1px;
+             border:1px solid var(--gold); background:#000a; color:var(--gold2);}
+  button{
+    font-family:inherit; font-size:13px; padding:7px 14px; cursor:pointer;
+    background:linear-gradient(var(--parch),var(--parch2)); color:var(--ink);
+    border:1px solid var(--gold); border-radius:4px;
+  }
+  button:hover{background:linear-gradient(var(--gold2),var(--gold));}
+  main{flex:1; display:flex; overflow:hidden;}
+  .board{flex:1; display:flex; flex-direction:column; padding:10px; gap:7px; overflow:auto;}
+  .side{width:300px; border-left:3px solid var(--gold); background:#0e0803cc; display:flex; flex-direction:column;}
+  .decks{padding:10px; border-bottom:1px solid #b8912f55;}
+  .decks h2{font-size:12px; color:var(--gold2); letter-spacing:1px; margin-bottom:8px;}
+  .deckBox{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .deckPile{
+    width:52px; height:74px; border-radius:5px; position:relative;
+    background:repeating-linear-gradient(48deg,#3a2a52,#3a2a52 6px,#4a3768 6px,#4a3768 12px);
+    border:2px solid var(--gold); box-shadow:2px 2px 0 #160f28, 4px 4px 0 #0d0819;
+    display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--gold2); font-weight:bold;
+  }
+  .deckInfo{font-size:12px; line-height:1.5;}
+  .log{flex:1; padding:10px; overflow-y:auto; font-size:12px; line-height:1.5;}
+  .log h2{font-size:12px; color:var(--gold2); margin-bottom:6px; letter-spacing:1px;}
+  .log div{border-bottom:1px solid #b8912f22; padding:3px 0; white-space:pre-wrap;}
+
+  .zone{border:1px solid #b8912f55; border-radius:6px; padding:7px; background:#00000030;}
+  .zone.active{border-color:var(--gold2); box-shadow:0 0 0 2px #f0d97a55, inset 0 0 30px #b8912f22;}
+  .zone.dim{opacity:.5;}
+  .zone h3{font-size:12px; color:var(--gold2); letter-spacing:1px; margin-bottom:6px; display:flex; align-items:center; gap:8px;}
+  .youtag{font-size:10px; background:var(--gold); color:var(--ink); padding:1px 7px; border-radius:8px; letter-spacing:.5px;}
+  /* Arena: iki tarafli, ortada bir "cizgi" */
+  .arena{border:2px solid #b8912f66; border-radius:8px; padding:6px;
+         background:radial-gradient(ellipse at 50% 50%, #5a4225, #3a2a17 75%);}
+  .arena h3{font-size:11px; color:var(--gold2); letter-spacing:2px; text-align:center; opacity:.8; margin:2px 0;}
+  .arenaRow{display:flex; gap:8px; flex-wrap:wrap; min-height:96px; justify-content:center;}
+  .divider{height:2px; background:linear-gradient(90deg,transparent,#b8912f88,transparent); margin:6px 0;}
+
+  .row{display:flex; gap:8px; flex-wrap:wrap; min-height:98px;}
+  .card{
+    width:104px; padding:6px; border-radius:6px; position:relative; cursor:pointer;
+    background:linear-gradient(160deg,var(--parch),var(--parch2)); color:var(--ink);
+    border:2px solid #6b4f22; box-shadow:0 3px 6px #0009; font-size:11px;
+  }
+  .card:hover{transform:translateY(-4px); border-color:var(--gold2);}
+  .card.sel{border-color:#c0392b; box-shadow:0 0 0 3px #c0392b88;}
+  .card.cheap{outline:2px solid #4a9d6a; outline-offset:1px;}
+  .card.poor{filter:grayscale(.6) brightness(.82); cursor:not-allowed;}
+  .card.sick{filter:grayscale(.75) brightness(.72);}
+  .card.p2{border-color:#7a3b3b;}    /* rakip renk tonu */
+  .cname{font-weight:bold; font-size:11px; margin-bottom:3px; min-height:26px;}
+  .stat{display:flex; justify-content:space-between; font-size:10px;}
+  .cost{position:absolute; top:-8px; left:-8px; width:22px; height:22px; border-radius:50%;
+        background:var(--mana); color:#fff; display:flex; align-items:center; justify-content:center;
+        font-size:11px; border:2px solid #10233a;}
+  .sickTag{position:absolute; top:-8px; right:-8px; background:#4a4a6a; color:#dfe;
+           font-size:9px; padding:1px 6px; border-radius:8px; border:1px solid #222;}
+  .badges{margin-top:3px; font-size:9px; color:#7a2020; min-height:11px;}
+  .hint{font-size:11px; opacity:.7; font-style:italic;}
+  .empty{opacity:.4; font-style:italic; font-size:12px; padding:8px; text-align:center; width:100%;}
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<div class="screen on" id="scTitle">
+  <h1>PROJECT:KANGREYA</h1>
+  <div class="sub">CARD BATTLES</div>
+  <button class="bigbtn" id="btnToNames">START</button>
+</div>
+
+<!-- 2 -->
+<div class="screen" id="scNames">
+  <h2>PLAYER NAMES</h2>
+  <div class="field"><label>Player 1</label><input id="n1" value="Player 1" maxlength="18"></div>
+  <div class="field"><label>Player 2</label><input id="n2" value="Player 2" maxlength="18"></div>
+  <button class="bigbtn" id="btnToChar">CONTINUE</button>
+</div>
+
+<!-- 3 -->
+<div class="screen" id="scChar">
+  <h2>CHOOSE YOUR CHARACTER</h2>
+  <div id="charWho">—</div>
+  <div class="charGrid" id="charGrid"></div>
+</div>
+
+<!-- 4 -->
+<div class="screen" id="scGame">
+  <header>
+    <h1>PROJECT:KANGREYA</h1>
+    <span class="turnBadge" id="turnBadge">—</span>
+    <button id="btnEnd">End Turn</button>
+    <span class="spacer"></span>
+    <span id="tour" style="color:var(--gold2)">Turn: -</span>
+  </header>
+  <main>
+    <div class="board">
+      <div class="zone" id="z2"><h3 id="p2title">PLAYER 2</h3><div class="row" id="p2hand"></div></div>
+
+      <div class="arena">
+        <h3>⚔ ARENA — click your active card, then a target ⚔</h3>
+        <div class="arenaRow" id="arenaTop"></div>
+        <div class="divider"></div>
+        <div class="arenaRow" id="arenaBottom"></div>
+      </div>
+
+      <div class="zone" id="z1"><h3 id="p1title">PLAYER 1</h3><div class="row" id="p1hand"></div></div>
+    </div>
+
+    <div class="side">
+      <div class="decks">
+        <h2>DECKS</h2>
+        <div class="deckBox">
+          <div class="deckPile" id="d1">30</div>
+          <div class="deckInfo"><b id="d1name">Player 1</b><br><span id="d1sub">30 cards left</span></div>
+        </div>
+        <div class="deckBox">
+          <div class="deckPile" id="d2">30</div>
+          <div class="deckInfo"><b id="d2name">Player 2</b><br><span id="d2sub">30 cards left</span></div>
+        </div>
+      </div>
+      <div class="log"><h2>BATTLE LOG</h2><div id="logBody"></div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+let state=null, attacker=-1, charTurn=1, taken={}, names={1:'Player 1',2:'Player 2'};
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function logLine(t){
+  if(!t) return;
+  const box=document.getElementById('logBody');
+  String(t).split('\n').forEach(l=>{ if(!l.trim())return;
+    const d=document.createElement('div'); d.textContent=l; box.appendChild(d); });
+  box.scrollTop=box.scrollHeight;
+}
+async function pullLog(){ logLine(await window.getLog()); }
+async function fetchState(){ return await window.getState(); }   // webview zaten parse eder
+
+/* --- 1 -> 2 --- */
+document.getElementById('btnToNames').onclick=()=>show('scNames');
+
+/* --- 2 -> 3 --- */
+document.getElementById('btnToChar').onclick=async ()=>{
+  names[1]=document.getElementById('n1').value.trim()||'Player 1';
+  names[2]=document.getElementById('n2').value.trim()||'Player 2';
+  await window.startGame(names[1],names[2]);
+  await pullLog();
+  state=await fetchState(); charTurn=1; taken={};
+  drawCharGrid(); show('scChar');
+};
+
+/* --- 3 : character selection --- */
+function drawCharGrid(){
+  document.getElementById('charWho').textContent = `${names[charTurn]} — choose your character`;
+  const g=document.getElementById('charGrid'); g.innerHTML='';
+  state.characterPool.forEach(e=>{
+    const c=e.character;
+    const d=document.createElement('div');
+    d.className='charCard'+(taken[e.key]?' taken':'');
+    d.innerHTML=`<div class="cn">${c?c.name:'?'}</div>
+                 <div class="ck">${e.key}</div>
+                 <div class="cs">HP ${c?c.hp:'-'} &nbsp;|&nbsp; MANA ${c?c.mana:'-'}</div>`;
+    if(!taken[e.key]) d.onclick=async ()=>{
+      await window.chooseCharacter(charTurn,e.key); taken[e.key]=true; await pullLog();
+      if(charTurn===1){ charTurn=2; state=await fetchState(); drawCharGrid(); }
+      else { await refresh(); show('scGame'); }
+    };
+    g.appendChild(d);
+  });
+}
+
+/* --- 4 : game board --- */
+async function refresh(){
+  state=await fetchState();
+  const cur=state.currentPlayer;
+  document.getElementById('tour').textContent='Turn: '+state.tour;
+  document.getElementById('turnBadge').textContent =
+    (cur===1?state.player1.name:state.player2.name).toUpperCase()+"'S TURN";
+  document.getElementById('p1title').innerHTML = title(state.player1,1,cur);
+  document.getElementById('p2title').innerHTML = title(state.player2,2,cur);
+
+  // sirasi gelen oyuncunun bolgesini vurgula
+  document.getElementById('z1').className='zone'+(cur===1?' active':' dim');
+  document.getElementById('z2').className='zone'+(cur===2?' active':' dim');
+
+  deckPanel();
+  drawHand('p1hand',state.player1,1,cur);
+  drawHand('p2hand',state.player2,2,cur);
+  drawArena(cur);
+}
+function title(p,idx,cur){
+  const c=p.character; const you = idx===cur ? `<span class="youtag">TURN</span>` : '';
+  return `${p.name.toUpperCase()} ${you} ` + (c?`&nbsp; ${c.name} &nbsp;(HP ${c.hp} | MANA ${c.mana} | CD ${c.cooldown})`:'');
+}
+function deckPanel(){
+  document.getElementById('d1').textContent=state.player1.deckCount;
+  document.getElementById('d2').textContent=state.player2.deckCount;
+  document.getElementById('d1name').textContent=state.player1.name;
+  document.getElementById('d2name').textContent=state.player2.name;
+  document.getElementById('d1sub').textContent=state.player1.deckCount+' cards left';
+  document.getElementById('d2sub').textContent=state.player2.deckCount+' cards left';
+}
+function cardEl(c, extra, onField){
+  const d=document.createElement('div');
+  let cls='card '+(extra||'');
+  if(c.owner===2) cls+=' p2';
+  if(onField && !c.active) cls+=' sick';
+  d.className=cls;
+  const b=[];
+  if(c.stunned)b.push('STUN'); if(c.invulnerable)b.push('IMMUNE');
+  if(c.marked)b.push('MARKED'); if(c.armor>0)b.push('ARMOR '+c.armor);
+  const sick = (onField && !c.active) ? `<div class="sickTag">💤 SICK</div>` : '';
+  d.innerHTML=`<div class="cost">${c.cost}</div>${sick}
+     <div class="cname">${c.name}</div>
+     <div class="stat"><span>HP</span><b>${c.hp}</b></div>
+     <div class="stat"><span>DMG</span><b>${c.dmg}</b></div>
+     <div class="badges">${b.join(' · ')}</div>`;
+  return d;
+}
+function drawHand(id,p,idx,cur){
+  const box=document.getElementById(id); box.innerHTML='';
+  if(!p.hand.length){ box.innerHTML='<div class="empty">Hand empty</div>'; return; }
+  const myturn = idx===cur;
+  const mana = p.character?p.character.mana:0;
+  p.hand.forEach((c,i)=>{
+    const ok = myturn && mana>=c.cost;
+    const el=cardEl(c, ok?'cheap':'poor', false);
+    el.onclick=async ()=>{
+      if(!myturn){ logLine(`It's not ${p.name}'s turn.`); return; }
+      if(mana<c.cost){ logLine(`Not enough mana: ${c.name} (${c.cost}) — you have ${mana}`); return; }
+      await window.playCard(idx,i); await pullLog(); await refresh();
+    };
+    box.appendChild(el);
+  });
+}
+function drawArena(cur){
+  const top=document.getElementById('arenaTop'), bot=document.getElementById('arenaBottom');
+  top.innerHTML=''; bot.innerHTML='';
+  let any1=false, any2=false;
+  state.battlefield.forEach((c,i)=>{
+    const mineActive = (c.owner===cur) && c.active;   // saldirgan olabilir mi
+    const el=cardEl(c, (attacker===i?'sel':''), true);
+    el.onclick=async ()=>{
+      if(attacker===-1){
+        if(!mineActive){
+          logLine(c.owner!==cur ? "Select your OWN card to attack with."
+                                : `${c.name} can't act this turn (summoning sickness).`);
+          return;
+        }
+        attacker=i; drawArena(cur); return;
+      }
+      if(attacker===i){ attacker=-1; drawArena(cur); return; }
+      await window.attack(cur, attacker, i); attacker=-1;
+      await pullLog(); await refresh();
+    };
+    if(c.owner===2){ top.appendChild(el); any2=true; } else { bot.appendChild(el); any1=true; }
+  });
+  if(!any2) top.innerHTML='<div class="empty">— Player 2 has no cards in the arena —</div>';
+  if(!any1) bot.innerHTML='<div class="empty">— Player 1 has no cards in the arena —</div>';
+}
+document.getElementById('btnEnd').onclick=async ()=>{
+  await window.endTurn(); attacker=-1; await pullLog(); await refresh();
+};
+</script>
+</body>
+</html>

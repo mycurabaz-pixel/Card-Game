@@ -17,17 +17,30 @@ void Player::drawCard(){
     }
 }
 
-void Player::playCard(card* played_card, Deck<card*>& battlefield){
+bool Player::playCard(card* played_card, Deck<card*>& battlefield){
+    // [YENI] Karakter yoksa mana dusurulurken cokerdi.
+    if(activeCharacter == nullptr){
+        std::cout << player_name << ": no character selected, cannot play a card." << std::endl;
+        return false;
+    }
+    // [YENI] Mana yetmiyorsa kart OYNANMAZ (onceden mana eksiye dusuyordu).
+    if(!activeCharacter->canAfford(played_card->getCost())){
+        std::cout << player_name << ": not enough mana ("
+                  << activeCharacter->getMana() << "/" << played_card->getCost() << ")" << std::endl;
+        return false;
+    }
+
     for(auto it = hand.begin(); it != hand.end(); ++it){
         if((*it)->getPrivateCardId() == played_card->getPrivateCardId()){
 
-            activeCharacter->setMana(activeCharacter->getMana() - played_card->getCost());
+            activeCharacter->useMana(played_card->getCost());
             battlefield.addCardToDeck(played_card);
             team.addCardToDeck(played_card);
             hand.erase(it);
-            break;
+            return true;
         }
     }
+    return false;   // kart elde bulunamadi
 }
 
 card* Player::selectCard(){

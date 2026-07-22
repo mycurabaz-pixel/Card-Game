@@ -4,7 +4,8 @@
 #include"Effect.h"
 #include <string>
 #include <functional>
-#include <utility> // std::move
+#include <utility>   // std::move
+#include <algorithm> // std::min, std::max (baslangic manasi kirpmasi icin)
 #include "IDamageable.h"
 #include "Deck.h"
 #include "Card.h"
@@ -29,6 +30,7 @@ class Character : public IDamageable {
         bool invulnerable = false;
         bool reflection_marked = false;
         bool stunned;
+        Player* owner;
 
         public:
 
@@ -37,7 +39,8 @@ class Character : public IDamageable {
             maxHealth(maxHealth),
             health(maxHealth),
             maxMana(maxMana),
-            mana(maxMana),
+            // Baslangic manasi: maxMana/3, taban 4 (min). maxMana 4'ten kucukse tavani asmasin diye min ile kirpiliyor.
+            mana(std::min(maxMana, std::max(maxMana / 3, 4))),
             abilityCoolDown(abilityCoolDown),
             abilityDuration(abilityDuration),
             abilityCost(abilityCost),
@@ -46,6 +49,7 @@ class Character : public IDamageable {
 
             bool tryUseAbility(IDamageable* target, Deck<card*> battlefield, Deck<card*> allyTeam, Deck<card*> enemyTeam){
             if(currentCooldown > 0) return false;         // hazır değil
+            if(!canAfford(abilityCost)) return false;     // [YENI] mana yetmiyorsa yetenek kullanilamaz
             if(ability) ability(target, battlefield, allyTeam, enemyTeam);
             currentCooldown = abilityCoolDown;            // beklemeyi başlat
             useMana(abilityCost);
@@ -84,22 +88,29 @@ class Character : public IDamageable {
 
             void setMana(int mana){if(mana > maxMana){
                 this->mana = maxMana;}
+            else if(mana < 0){          // [DUZELTME] alt sinir yoktu -> mana eksiye dusuyordu
+                this->mana = 0;}
             else{
                 this->mana = mana;
             }}
             void useMana(int mana){
-                this->mana -= mana;
+                setMana(this->mana - mana);   // [DUZELTME] setMana uzerinden -> 0'in altina inmez
             }
             int getMana(){return mana;}
+
+            // [YENI] Yeterli mana var mi? GUI de bunu kullanip oynanamayan karti soluk gosterir.
+            bool canAfford(int cost) const { return mana >= cost; }
+
             bool isAbilityReady(){return currentCooldown == 0;}
             void tickCoolDown(){currentCooldown --;}
+
             int getcurrentCooldown(){return currentCooldown;}
             int getAbilityDuration(){return abilityDuration;}
+
             void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;}
             bool isInvulnerable(){return invulnerable;}
+
             bool isReflectionMarked(){return reflection_marked;}
-            void setStunned(bool stunned){this->stunned = stunned;}
-            bool isStunned(){return stunned;}
             void setReflectionMarked(bool reflection_marked){this->reflection_marked = reflection_marked;}
             void reflect(IDamageable* target, int damage){
                 if(target->isReflectionMarked()){
@@ -107,6 +118,13 @@ class Character : public IDamageable {
                 }
                 target->takeDamage(this, damage/3);
             }
+
+            void setStunned(bool stunned){this->stunned = stunned;}
+            bool isStunned(){return stunned;}
+
+            Player* getOwner(){return owner;}
+            void setOwner(Player* owner){this->owner = owner;}
+
 
         void addEffect(DmgType hitType, Effect effect){
 
