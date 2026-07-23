@@ -125,6 +125,19 @@ int main(){
         return gui::attack(argInt(req, 0), argInt(req, 1), argInt(req, 2)) ? "true" : "false";
     });
 
+    w.bind("useCardAbility", [](std::string req) -> std::string {
+        return gui::useCardAbility(argInt(req, 0), argInt(req, 1), argInt(req, 2)) ? "true" : "false";
+    });
+
+    w.bind("useCharacterAbility", [](std::string req) -> std::string {
+        return gui::useCharacterAbility(argInt(req, 0), argInt(req, 1)) ? "true" : "false";
+    });
+
+    w.bind("surrender", [](std::string req) -> std::string {
+        gui::surrender(argInt(req, 0));
+        return "true";
+    });
+
     w.bind("endTurn", [](std::string) -> std::string {
         gui::endTurn();
         return "true";

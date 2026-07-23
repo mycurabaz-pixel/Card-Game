@@ -8,14 +8,23 @@ void SeaSonCard::random_unique_dmg(){
 
     std::mt19937 gen(rd());
 
-    std::uniform_int_distribution<> interval_1(0, (card::getCost() * 2));
+    std::uniform_int_distribution<> interval_1(0, getMaxRandomBonus());
 
     unique_dmg_buff = interval_1(gen);
 
     card::updateDmgHit(card::getDmgHit() + unique_dmg_buff);
 }
 
+// Rastgele bonusun ust siniri - TEK KAYNAK (zar + GUI ayni yeri okur).
+// SENIN DEGISIKLIGIN: cost*2 degil, cost.
+int SeaSonCard::getMaxRandomBonus(){
+    return card::getCost();
+}
+
 void SeaSonCard::hit(IDamageable* target) {
+
+    if(getOwner() == target->getOwner()){return;}
+
     if(!card::isStunned() && isActive()){
     setActive(false);
     random_unique_dmg();
@@ -34,6 +43,7 @@ void SeaSonCard::hit(IDamageable* target) {
 }
 
 void SeaSonCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) {
+
     if(uniquePower && !card::isStunned() && isActive()){
         setActive(false);
         uniquePower(target, battlefield, this, allyTeam, enemyTeam);
@@ -85,7 +95,7 @@ std::string SeaSonCard::getCardInfo() {
     }
     info << "\n";
 
-    info << "Sea Curse      : " << unique_ability << " (Effect Power: " <<"\n";
+    info << "Sea Curse      : " << unique_ability << "\n";
     info << "======================================\n";
 
     return info.str();

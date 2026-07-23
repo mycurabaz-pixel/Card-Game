@@ -38,6 +38,7 @@ class TechCard : public card {
     }
 
     void random_unique_dmg();
+    int getMaxRandomBonus() override;   // rastgele bonus ust siniri (GUI de bunu okur)
     void hit(IDamageable* target) override;
     void useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) override;
     void useReverseUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) override;

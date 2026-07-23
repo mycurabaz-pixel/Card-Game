@@ -42,7 +42,7 @@ class card : public IDamageable {
     bool dead = false;
     int powerCost;
     int powerDuration;
-    int armor;
+    int armor = 0;
     bool active = false;
 
 
@@ -202,6 +202,11 @@ class card : public IDamageable {
     virtual void activateTypeBuff() = 0;
 
     virtual std::string getCardInfo() = 0;
+
+    // Vurusa eklenen rastgele bonusun UST siniri.
+    // Her kart turu kendi random_unique_dmg()'sindeki araligi dondurur; boylece
+    // araligi degistirdiginde GUI otomatik dogru gosterir (sabit formul yok).
+    virtual int getMaxRandomBonus() = 0;
 
     virtual  void useReverseUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) = 0;
 

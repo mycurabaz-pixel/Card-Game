@@ -3,6 +3,10 @@
 
 #include <string>
 
+// [DUZELTME] getOwner/setOwner Player* kullaniyor ama Player burada tanimli degildi.
+// Sadece pointer tuttugumuz icin ileri bildirim yeterli (Player.h include etmiyoruz -> dongu yok).
+class Player;
+
 class IDamageable {
 public:
     virtual void takeDamage(IDamageable* attacker, int dmg) = 0;
@@ -19,6 +23,8 @@ public:
     virtual bool isStunned() = 0;
     virtual void setInvulnerable(bool invulnerable) = 0;
     virtual bool isInvulnerable() = 0;
+    virtual Player* getOwner() = 0;
+    virtual void setOwner(Player* owner) = 0;
 };
 
 #endif // IDAMAGEABLE_H

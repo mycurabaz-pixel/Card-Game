@@ -47,8 +47,17 @@ void drawCard(int playerIdx);
 // Sahadaki attackerIdx'inci kart, sahadaki targetIdx'inci karta vurur.
 bool attack(int playerIdx, int attackerIdx, int targetIdx);
 
+// Kartin OZEL YETENEGI (gameManager::useCardAbility). targetIdx < 0 -> hedefsiz.
+bool useCardAbility(int playerIdx, int cardIdx, int targetIdx);
+
+// KARAKTER yetenegi (gameManager::useCharacterAbility). targetIdx < 0 -> hedefsiz.
+bool useCharacterAbility(int playerIdx, int targetIdx);
+
 // Turu bitirir: sureli etkiler islenir, sayaclar ilerler.
 void endTurn();
+
+// playerIdx pes eder; rakip kazanir.
+void surrender(int playerIdx);
 
 // Arayuzden gelen hedef secimini bekleyen yetenekler icin: secilen indeksleri
 // onceden kuyruga koyar (targeting::setTargetChooser bunlari kullanir).

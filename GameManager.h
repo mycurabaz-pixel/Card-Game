@@ -63,6 +63,8 @@ class gameManager {
     Deck<card*>& getBattlefield(){ return battle_field; }
     std::map<std::string, Character*>& getCharacterPool(){ return character_pool; }
     int getTourCounter() const { return tour_counter; }
+    bool isGameRunning() const { return isRunning; }   // [GUI] oyun bitti mi
+    void stopGame(){ isRunning = false; }              // [GUI] teslim olma icin
 
 };
 

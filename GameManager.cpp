@@ -864,6 +864,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
             if(card* tTarget = dynamic_cast<card*>(target)){(*tempTarget) = tTarget;}
             for(card* c: enemyTeam.getCards()){
                 if(target == c){
+                    c->setOwner(self->getOwner());
                     allyTeam.addCardToDeck(c);
                     enemyTeam.removeCardFromDeck(c);
                 }
@@ -872,6 +873,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
         [tempTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
                 for(card* c: allyTeam.getCards()){
                 if((*tempTarget) == c){
+                    c->setOwner((*tempTarget)->getOwner());
                     allyTeam.removeCardFromDeck(c);
                     enemyTeam.addCardToDeck(c);
                 }
@@ -1101,9 +1103,9 @@ void gameManager::advanceTurn(){
     // [DUZELTME] Karakter atanmamissa getCharacter() nullptr doner -> once kontrol et,
     // yoksa nullptr uzerinden setMana cagrilir ve program coker.
     if(player1.hasCharacter())
-        player1.getCharacter()->setMana(player1.getCharacter()->getMana() + tour_counter);
+        player1.getCharacter()->setMana(player1.getCharacter()->getMana() + tour_counter + 2);
     if(player2.hasCharacter())
-        player2.getCharacter()->setMana(player2.getCharacter()->getMana() + tour_counter);
+        player2.getCharacter()->setMana(player2.getCharacter()->getMana() + tour_counter + 2);
 
         executeEffects();
 
@@ -1214,8 +1216,18 @@ void gameManager::useCharacterAbility(Player& user, Player& enemy, IDamageable* 
     // Player kendi karakterini kullanir; cooldown doluysa false doner.
     // (Eski degerleri kaydetme isini karakterin apply lambda'si kendi yapiyor.)
     if(!user.useCharacterAbility(target, battle_field, enemy.getTeam())){
-        std::cout << user.getName() << "'in karakteri su an cooldownda ("
-                  << user.getCharacter()->getcurrentCooldown() << " tur kaldi)" << std::endl;
+        // [DUZELTME] Eskiden sebep ne olursa olsun "cooldownda" yaziyordu; artik gercek sebebi soyluyor.
+        Character* ch = user.getCharacter();
+        if(user.getAbilityPoint() <= 0)
+            std::cout << user.getName() << " already used a hero ability this turn." << std::endl;
+        else if(ch->getcurrentCooldown() > 0)
+            std::cout << user.getName() << "'s hero is on cooldown ("
+                      << ch->getcurrentCooldown() << " turn(s) left)" << std::endl;
+        else if(!ch->canAfford(ch->getAbilityCost()))
+            std::cout << user.getName() << ": not enough mana for hero ability ("
+                      << ch->getMana() << "/" << ch->getAbilityCost() << ")" << std::endl;
+        else
+            std::cout << user.getName() << ": hero ability unavailable." << std::endl;
         return;
     }
 
@@ -1272,5 +1284,12 @@ void gameManager::tickCards(){
 }
 
 void gameManager::endGame(){
-    if(player1.getCharacter()->getHealth() == 0 || player2.getCharacter()->getHealth() == 0){isRunning == false;}
+    // [DUZELTME 1] 'isRunning == false;' idi -> ATAMA degil KARSILASTIRMA. Hicbir sey yapmiyordu.
+    // [DUZELTME 2] '== 0' idi -> can eksiye dusebiliyor (takeDamage cikariyor), '<= 0' olmali.
+    // [DUZELTME 3] getCharacter() nullptr olabilir -> once kontrol, yoksa cokerdi.
+    Character* c1 = player1.getCharacter();
+    Character* c2 = player2.getCharacter();
+    if((c1 && c1->getHealth() <= 0) || (c2 && c2->getHealth() <= 0)){
+        isRunning = false;
+    }
 }

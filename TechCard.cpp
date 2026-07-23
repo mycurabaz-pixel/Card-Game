@@ -8,14 +8,22 @@ void TechCard::random_unique_dmg(){
 
     std::mt19937 gen(rd());
 
-    std::uniform_int_distribution<> interval_1(0, (card::getCost() * 2));
+    std::uniform_int_distribution<> interval_1(0, getMaxRandomBonus());
 
     unique_dmg_buff = interval_1(gen);
 
     card::updateDmgHit(card::getDmgHit() + unique_dmg_buff);
 }
 
+// Rastgele bonusun ust siniri - TEK KAYNAK (zar + GUI ayni yeri okur).
+int TechCard::getMaxRandomBonus(){
+    return card::getCost();
+}
+
 void TechCard::hit(IDamageable* target) {
+
+    if(getOwner() == target->getOwner()){return;}
+
     if(!card::isStunned() && isActive()){
         setActive(false);
     random_unique_dmg();
@@ -34,6 +42,7 @@ void TechCard::hit(IDamageable* target) {
 }
 
 void TechCard::useUniquePower(IDamageable* target, Deck<card*>& battlefield, card* self, Deck<card*> allyTeam, Deck<card*> enemyTeam) {
+
     if(uniquePower && !card::isStunned() && isActive()){
         setActive(false);
         uniquePower(target, battlefield, this, allyTeam, enemyTeam);

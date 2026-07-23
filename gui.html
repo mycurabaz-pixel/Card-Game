@@ -5,142 +5,206 @@
 <title>Project:Kangreya</title>
 <style>
   :root{
-    --wood:#5a3f24; --wood2:#3a2814; --edge:#1c1108;
-    --gold:#b8912f; --gold2:#f0d97a;
+    --wood:#5a3f24; --wood2:#3a2814; --gold:#b8912f; --gold2:#f0d97a;
     --parch:#e9dcbf; --parch2:#cdb98d; --ink:#2b2118; --mana:#3a5f8a;
-    --stone:#6d5f4b; --arena:#4a3a26;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     font-family:"Georgia","Book Antiqua","Times New Roman",serif; color:var(--parch);
     background:
       radial-gradient(ellipse at 50% 30%, rgba(120,90,50,.25), transparent 60%),
-      repeating-linear-gradient(90deg, #3a2814 0px, #3a2814 38px, #34230f 38px, #34230f 76px),
-      linear-gradient(#2e2011, #170d05);
+      repeating-linear-gradient(90deg,#3a2814 0,#3a2814 38px,#34230f 38px,#34230f 76px),
+      linear-gradient(#2e2011,#170d05);
     height:100vh; overflow:hidden; user-select:none;
   }
-  .screen{display:none; height:100vh;}
-  .screen.on{display:flex;}
+  .screen{display:none; height:100vh;} .screen.on{display:flex;}
 
-  /* ---------- 1. TITLE ---------- */
+  /* ---- 1 TITLE ---- */
   #scTitle{flex-direction:column; align-items:center; justify-content:center; gap:26px;}
-  #scTitle h1{
-    font-size:66px; letter-spacing:9px; color:var(--gold2);
-    text-shadow:0 0 26px rgba(184,145,47,.6), 0 4px 0 #5a4514, 0 5px 8px #000;
-  }
+  #scTitle h1{font-size:66px; letter-spacing:9px; color:var(--gold2);
+    text-shadow:0 0 26px rgba(184,145,47,.6),0 4px 0 #5a4514,0 5px 8px #000;}
   #scTitle .sub{letter-spacing:6px; opacity:.75; font-size:14px;}
-  .bigbtn{
-    font-family:inherit; font-size:19px; letter-spacing:3px; padding:14px 46px; cursor:pointer;
+  .bigbtn{font-family:inherit; font-size:19px; letter-spacing:3px; padding:14px 46px; cursor:pointer;
     background:linear-gradient(var(--parch),var(--parch2)); color:var(--ink);
-    border:2px solid var(--gold); border-radius:6px; box-shadow:0 4px 10px #000a;
-  }
+    border:2px solid var(--gold); border-radius:6px; box-shadow:0 4px 10px #000a;}
   .bigbtn:hover{background:linear-gradient(var(--gold2),var(--gold));}
 
-  /* ---------- 2. NAMES ---------- */
+  /* ---- 2 NAMES ---- */
   #scNames{flex-direction:column; align-items:center; justify-content:center; gap:18px;}
   #scNames h2{color:var(--gold2); letter-spacing:3px; margin-bottom:8px;}
   .field{display:flex; gap:12px; align-items:center; font-size:15px;}
   .field label{width:80px;}
-  .field input{
-    font-family:inherit; font-size:15px; padding:9px 12px; width:250px;
-    background:var(--parch); color:var(--ink); border:2px solid var(--gold); border-radius:4px;
-  }
+  .field input{font-family:inherit; font-size:15px; padding:9px 12px; width:250px;
+    background:var(--parch); color:var(--ink); border:2px solid var(--gold); border-radius:4px;}
 
-  /* ---------- 3. CHARACTER SELECT ---------- */
+  /* ---- 3 CHARACTER SELECT ---- */
   #scChar{flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px;}
   #scChar h2{color:var(--gold2); letter-spacing:3px;}
-  #charWho{font-size:17px;}
   .charGrid{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; max-width:1080px;}
-  .charCard{
-    width:200px; padding:14px; border-radius:8px; cursor:pointer; text-align:center;
+  .charCard{width:200px; padding:14px; border-radius:8px; cursor:pointer; text-align:center;
     background:linear-gradient(160deg,var(--parch),var(--parch2)); color:var(--ink);
-    border:2px solid #7a5f2e; box-shadow:0 4px 12px #000a;
-  }
+    border:2px solid #7a5f2e; box-shadow:0 4px 12px #000a;}
   .charCard:hover{border-color:var(--gold2); transform:translateY(-5px);}
   .charCard.taken{filter:grayscale(1) brightness(.6); cursor:not-allowed; transform:none;}
   .charCard .cn{font-weight:bold; font-size:15px; margin-bottom:6px;}
   .charCard .ck{font-size:11px; font-style:italic; opacity:.75; margin-bottom:8px;}
-  .charCard .cs{font-size:12px;}
 
-  /* ---------- 4. GAME BOARD ---------- */
+  /* ---- 4 BOARD ---- */
   #scGame{flex-direction:column;}
-  header{
-    padding:8px 16px; border-bottom:3px solid var(--gold);
-    background:linear-gradient(#3a2814,#241708); display:flex; align-items:center; gap:14px;
-  }
-  header h1{font-size:16px; color:var(--gold2); letter-spacing:3px;}
+  header{padding:8px 16px; border-bottom:3px solid var(--gold);
+    background:linear-gradient(#3a2814,#241708); display:flex; align-items:center; gap:14px;}
+  header h1{font-size:15px; color:var(--gold2); letter-spacing:3px;}
   .spacer{flex:1;}
   .turnBadge{padding:5px 14px; border-radius:14px; font-size:13px; letter-spacing:1px;
-             border:1px solid var(--gold); background:#000a; color:var(--gold2);}
-  button{
-    font-family:inherit; font-size:13px; padding:7px 14px; cursor:pointer;
+    border:1px solid var(--gold); background:#000a; color:var(--gold2);}
+  button{font-family:inherit; font-size:13px; padding:7px 14px; cursor:pointer;
     background:linear-gradient(var(--parch),var(--parch2)); color:var(--ink);
-    border:1px solid var(--gold); border-radius:4px;
-  }
+    border:1px solid var(--gold); border-radius:4px;}
   button:hover{background:linear-gradient(var(--gold2),var(--gold));}
   main{flex:1; display:flex; overflow:hidden;}
-  .board{flex:1; display:flex; flex-direction:column; padding:10px; gap:7px; overflow:auto;}
-  .side{width:300px; border-left:3px solid var(--gold); background:#0e0803cc; display:flex; flex-direction:column;}
-  .decks{padding:10px; border-bottom:1px solid #b8912f55;}
-  .decks h2{font-size:12px; color:var(--gold2); letter-spacing:1px; margin-bottom:8px;}
-  .deckBox{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
-  .deckPile{
-    width:52px; height:74px; border-radius:5px; position:relative;
-    background:repeating-linear-gradient(48deg,#3a2a52,#3a2a52 6px,#4a3768 6px,#4a3768 12px);
-    border:2px solid var(--gold); box-shadow:2px 2px 0 #160f28, 4px 4px 0 #0d0819;
-    display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--gold2); font-weight:bold;
+  .board{flex:1; display:flex; flex-direction:column; padding:8px; gap:6px; overflow:auto;}
+  .side{width:290px; border-left:3px solid var(--gold); background:#0e0803cc; display:flex; flex-direction:column;}
+
+  /* --- oyuncu sirasi (Hearthstone gibi): portre + yetenek | kartlar --- */
+  /* Hearthstone: kahraman satiri ORTADA, el ortalanmis */
+  .lane{display:flex; flex-direction:column; gap:5px; border:1px solid #b8912f55;
+        border-radius:8px; padding:6px; background:#00000030;}
+  .heroRow{display:flex; align-items:center; justify-content:center; gap:14px; position:relative;}
+  .handWrap{display:flex; justify-content:center;}
+  .lane.active{border-color:var(--gold2); box-shadow:0 0 0 2px #f0d97a44, inset 0 0 26px #b8912f22;}
+  .lane.dim{opacity:.55;}
+  .heroBox{display:flex; align-items:center; gap:8px; min-width:236px;}
+  .hero{
+    width:78px; height:96px; border-radius:50%;
+    background:radial-gradient(circle at 50% 35%, #d8c193, #8a6c3c 65%, #5a441f);
+    border:3px solid var(--gold); box-shadow:0 0 14px #000a, inset 0 0 18px #00000055;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:var(--ink); text-align:center; cursor:help; position:relative; flex:none;
   }
-  .deckInfo{font-size:12px; line-height:1.5;}
-  .log{flex:1; padding:10px; overflow-y:auto; font-size:12px; line-height:1.5;}
-  .log h2{font-size:12px; color:var(--gold2); margin-bottom:6px; letter-spacing:1px;}
-  .log div{border-bottom:1px solid #b8912f22; padding:3px 0; white-space:pre-wrap;}
+  .hero .hn{font-size:9px; font-weight:bold; line-height:1.1; padding:0 6px;}
+  .hero .hhp{position:absolute; bottom:-6px; right:-6px; background:#7c2b2b; color:#ffd9d9;
+    border:2px solid #3a1010; border-radius:50%; width:26px; height:26px; font-size:11px;
+    display:flex; align-items:center; justify-content:center;}
+  .hero .hmana{position:absolute; bottom:-6px; left:-6px; background:var(--mana); color:#dff;
+    border:2px solid #10233a; border-radius:50%; width:26px; height:26px; font-size:11px;
+    display:flex; align-items:center; justify-content:center;}
+  .abilityBtn{
+    width:56px; height:56px; border-radius:12px; cursor:pointer; flex:none;
+    background:radial-gradient(circle at 50% 35%, #6f5bd0, #3c2f7a);
+    border:2px solid var(--gold); color:#f0e6ff; font-size:10px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    box-shadow:0 0 12px #6f5bd055;
+  }
+  .abilityBtn:hover{border-color:var(--gold2); box-shadow:0 0 18px #9b86ff88;}
+  .abilityBtn.off{filter:grayscale(.85) brightness(.6); cursor:not-allowed; box-shadow:none;}
+  .abilityBtn.armed{box-shadow:0 0 0 3px #f0d97a, 0 0 20px #f0d97a99;}
+  .abilityBtn b{font-size:15px;}
+  .heroMeta{font-size:11px; line-height:1.45; text-align:right; min-width:130px;}
+  /* Tur butonlari: kahraman satirinin saginda */
+  .turnBtns{position:absolute; right:6px; display:flex; align-items:center; gap:8px;}
+  .cancelBtn{display:none; font-size:12px; padding:8px 14px;
+    background:linear-gradient(#c9a0a0,#9a6b6b); border:2px solid #e0b0b0; color:#2b1414;}
+  .cancelBtn:hover{background:linear-gradient(#e6c0c0,#b88585);}
+  .surrBtn{font-size:11px; padding:7px 12px; opacity:.75;
+    background:linear-gradient(#6a5a4a,#4a3d31); border:1px solid #8a7358; color:#e8dcc0;}
+  .surrBtn:hover{opacity:1; background:linear-gradient(#8a3030,#5a1f1f); border-color:#c07070;}
 
-  .zone{border:1px solid #b8912f55; border-radius:6px; padding:7px; background:#00000030;}
-  .zone.active{border-color:var(--gold2); box-shadow:0 0 0 2px #f0d97a55, inset 0 0 30px #b8912f22;}
-  .zone.dim{opacity:.5;}
-  .zone h3{font-size:12px; color:var(--gold2); letter-spacing:1px; margin-bottom:6px; display:flex; align-items:center; gap:8px;}
-  .youtag{font-size:10px; background:var(--gold); color:var(--ink); padding:1px 7px; border-radius:8px; letter-spacing:.5px;}
-  /* Arena: iki tarafli, ortada bir "cizgi" */
-  .arena{border:2px solid #b8912f66; border-radius:8px; padding:6px;
-         background:radial-gradient(ellipse at 50% 50%, #5a4225, #3a2a17 75%);}
-  .arena h3{font-size:11px; color:var(--gold2); letter-spacing:2px; text-align:center; opacity:.8; margin:2px 0;}
-  .arenaRow{display:flex; gap:8px; flex-wrap:wrap; min-height:96px; justify-content:center;}
-  .divider{height:2px; background:linear-gradient(90deg,transparent,#b8912f88,transparent); margin:6px 0;}
+  /* Oyun sonu ekrani */
+  #overlay{position:fixed; inset:0; z-index:200; display:none;
+    background:#0a0603ee; flex-direction:column; align-items:center; justify-content:center; gap:22px;}
+  #overlay h1{font-size:54px; letter-spacing:6px; color:var(--gold2);
+    text-shadow:0 0 30px rgba(184,145,47,.7), 0 4px 0 #5a4514;}
+  #overlay .who{font-size:22px; letter-spacing:3px;}
+  /* El: en fazla 4 kart yan yana, sonrasi alt sira */
+  .row{display:flex; gap:7px; flex-wrap:wrap; flex:1; min-height:158px; align-items:flex-start;
+       max-width:480px;}
 
-  .row{display:flex; gap:8px; flex-wrap:wrap; min-height:98px;}
-  .card{
-    width:104px; padding:6px; border-radius:6px; position:relative; cursor:pointer;
+  .arena{border:2px solid #b8912f66; border-radius:8px; padding:5px;
+    background:radial-gradient(ellipse at 50% 50%, #5a4225, #3a2a17 75%);}
+  .arena h3{font-size:10px; color:var(--gold2); letter-spacing:2px; text-align:center; opacity:.75;}
+  /* Arena: genis, 4 kart sonrasi alt sira (wrap) */
+  .arenaRow{display:flex; gap:8px; flex-wrap:wrap; min-height:158px; justify-content:center;
+            padding:5px; max-width:900px; margin:0 auto;}
+  .divider{height:2px; background:linear-gradient(90deg,transparent,#b8912f88,transparent); margin:4px 0;}
+
+  .card{width:104px; min-height:150px; padding:7px; border-radius:7px; position:relative; cursor:pointer;
+    display:flex; flex-direction:column;
     background:linear-gradient(160deg,var(--parch),var(--parch2)); color:var(--ink);
-    border:2px solid #6b4f22; box-shadow:0 3px 6px #0009; font-size:11px;
-  }
+    border:2px solid #6b4f22; box-shadow:0 3px 6px #0009; font-size:11px;}
+  .card .spacer{flex:1;}
   .card:hover{transform:translateY(-4px); border-color:var(--gold2);}
   .card.sel{border-color:#c0392b; box-shadow:0 0 0 3px #c0392b88;}
   .card.cheap{outline:2px solid #4a9d6a; outline-offset:1px;}
-  .card.poor{filter:grayscale(.6) brightness(.82); cursor:not-allowed;}
+  .card.poor{filter:grayscale(.6) brightness(.82);}
   .card.sick{filter:grayscale(.75) brightness(.72);}
-  .card.p2{border-color:#7a3b3b;}    /* rakip renk tonu */
+  /* Action point bitti: kart kullanilamaz */
+  .card.noap{filter:grayscale(.9) brightness(.55); cursor:not-allowed;}
+  .noapTag{position:absolute; top:38%; left:-4px; right:-4px; text-align:center;
+    background:#7a1f1fdd; color:#ffdede; font-size:9px; letter-spacing:.5px;
+    padding:2px 0; border-top:1px solid #ffdede55; border-bottom:1px solid #ffdede55;
+    transform:rotate(-8deg);}
+  .card.p2{border-color:#7a3b3b;}
+  .card.tgt{outline:3px dashed #f0d97a; outline-offset:2px;}
   .cname{font-weight:bold; font-size:11px; margin-bottom:3px; min-height:26px;}
   .stat{display:flex; justify-content:space-between; font-size:10px;}
   .cost{position:absolute; top:-8px; left:-8px; width:22px; height:22px; border-radius:50%;
-        background:var(--mana); color:#fff; display:flex; align-items:center; justify-content:center;
-        font-size:11px; border:2px solid #10233a;}
+    background:var(--mana); color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:11px; border:2px solid #10233a;}
   .sickTag{position:absolute; top:-8px; right:-8px; background:#4a4a6a; color:#dfe;
-           font-size:9px; padding:1px 6px; border-radius:8px; border:1px solid #222;}
+    font-size:9px; padding:1px 5px; border-radius:8px; border:1px solid #222;}
   .badges{margin-top:3px; font-size:9px; color:#7a2020; min-height:11px;}
+
+  /* --- eylem cubugu: Attack / Ability --- */
+  /* Eylem cubugu: SABIT konum (alt-orta). Elemana gore konumlandirmak,
+     yeniden cizimde eleman yok oldugu icin ekran disina kaciyordu. */
+  #actionBar{position:fixed; left:50%; transform:translateX(-50%); bottom:78px;
+    z-index:60; display:none; align-items:center; gap:8px; padding:8px 14px;
+    background:#1a1008f2; border:2px solid var(--gold2); border-radius:10px;
+    box-shadow:0 8px 26px #000d;}
+  #actionBar button{font-size:13px; padding:7px 14px;}
+  #barLabel{color:var(--gold2); font-size:13px; margin-right:4px;}
+
+  /* --- hover aciklama (senin getCardInfo()'ndan) --- */
+  #tip{position:fixed; z-index:80; display:none; max-width:330px; padding:10px 12px;
+    background:#120b04f2; border:2px solid var(--gold); border-radius:8px; color:var(--parch);
+    font-size:12px; line-height:1.5; white-space:pre-wrap; box-shadow:0 8px 22px #000c;}
+  #tip b{color:var(--gold2);}
+
+  .log{flex:1; padding:10px; overflow-y:auto; font-size:12px; line-height:1.5;}
+  .log h2{font-size:12px; color:var(--gold2); margin-bottom:6px; letter-spacing:1px;}
+  .log div{border-bottom:1px solid #b8912f22; padding:3px 0; white-space:pre-wrap;}
+  .decks{padding:10px; border-bottom:1px solid #b8912f55;}
+  .decks h2{font-size:12px; color:var(--gold2); letter-spacing:1px; margin-bottom:8px;}
+  .deckBox{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .deckPile{width:48px; height:68px; border-radius:5px;
+    background:repeating-linear-gradient(48deg,#3a2a52,#3a2a52 6px,#4a3768 6px,#4a3768 12px);
+    border:2px solid var(--gold); box-shadow:2px 2px 0 #160f28,4px 4px 0 #0d0819;
+    display:flex; align-items:center; justify-content:center; font-size:17px; color:var(--gold2); font-weight:bold;}
+  .deckInfo{font-size:12px; line-height:1.5;}
   .hint{font-size:11px; opacity:.7; font-style:italic;}
   .empty{opacity:.4; font-style:italic; font-size:12px; padding:8px; text-align:center; width:100%;}
+  /* End Turn: tahtanin altinda, sagda */
+  .endRow{display:flex; justify-content:flex-end; padding:2px 4px;}
+  .endBtn{font-size:15px; letter-spacing:2px; padding:10px 30px;
+    background:linear-gradient(#e0c070,#b8912f); border:2px solid var(--gold2);
+    box-shadow:0 3px 10px #000a;}
+  .endBtn:hover{background:linear-gradient(#f6e6a8,#d8ae3c);}
+  /* hedeflenebilir kahraman portresi */
+  .hero.tgt{outline:3px dashed #f0d97a; outline-offset:3px; cursor:crosshair;}
+  .harmor{position:absolute; top:-6px; right:-6px; background:#4a5b6a; color:#dff;
+    border:2px solid #22303a; border-radius:50%; width:24px; height:24px; font-size:10px;
+    display:flex; align-items:center; justify-content:center;}
+  .hstun{position:absolute; top:-6px; left:-6px; background:#6a5a2a; color:#ffe9a8;
+    border:2px solid #3a3010; border-radius:8px; font-size:9px; padding:1px 5px;}
 </style>
 </head>
 <body>
 
-<!-- 1 -->
 <div class="screen on" id="scTitle">
-  <h1>PROJECT:KANGREYA</h1>
-  <div class="sub">CARD BATTLES</div>
+  <h1>PROJECT:KANGREYA</h1><div class="sub">CARD BATTLES</div>
   <button class="bigbtn" id="btnToNames">START</button>
 </div>
 
-<!-- 2 -->
 <div class="screen" id="scNames">
   <h2>PLAYER NAMES</h2>
   <div class="field"><label>Player 1</label><input id="n1" value="Player 1" maxlength="18"></div>
@@ -148,195 +212,351 @@
   <button class="bigbtn" id="btnToChar">CONTINUE</button>
 </div>
 
-<!-- 3 -->
 <div class="screen" id="scChar">
   <h2>CHOOSE YOUR CHARACTER</h2>
   <div id="charWho">—</div>
   <div class="charGrid" id="charGrid"></div>
 </div>
 
-<!-- 4 -->
 <div class="screen" id="scGame">
   <header>
     <h1>PROJECT:KANGREYA</h1>
     <span class="turnBadge" id="turnBadge">—</span>
-    <button id="btnEnd">End Turn</button>
+    <span class="hint" id="modeHint"></span>
     <span class="spacer"></span>
     <span id="tour" style="color:var(--gold2)">Turn: -</span>
   </header>
   <main>
     <div class="board">
-      <div class="zone" id="z2"><h3 id="p2title">PLAYER 2</h3><div class="row" id="p2hand"></div></div>
+      <!-- ===== HEARTHSTONE DUZENI =====
+           P2 el (ust) / P2 kahraman ORTADA + yetenek SAGINDA
+           ARENA (P2 kartlari / P1 kartlari)
+           P1 kahraman ORTADA + yetenek SAGINDA / P1 el (alt)                  -->
+
+      <div class="lane" id="lane2">
+        <div class="handWrap"><div class="row" id="p2hand"></div></div>
+        <div class="heroRow">
+          <div class="heroMeta" id="meta2"></div>
+          <div class="hero" id="hero2"><div class="hn">-</div><div class="hmana">0</div><div class="hhp">0</div><div class="harmor" id="harmor2"></div><div class="hstun" id="hstun2"></div></div>
+          <div class="abilityBtn off" id="ab2"><b>✦</b><span>0</span></div>
+        </div>
+      </div>
 
       <div class="arena">
-        <h3>⚔ ARENA — click your active card, then a target ⚔</h3>
         <div class="arenaRow" id="arenaTop"></div>
         <div class="divider"></div>
         <div class="arenaRow" id="arenaBottom"></div>
       </div>
 
-      <div class="zone" id="z1"><h3 id="p1title">PLAYER 1</h3><div class="row" id="p1hand"></div></div>
+      <div class="lane" id="lane1">
+        <div class="heroRow">
+          <div class="heroMeta" id="meta1"></div>
+          <div class="hero" id="hero1"><div class="hn">-</div><div class="hmana">0</div><div class="hhp">0</div><div class="harmor" id="harmor1"></div><div class="hstun" id="hstun1"></div></div>
+          <div class="abilityBtn off" id="ab1"><b>✦</b><span>0</span></div>
+          <div class="turnBtns">
+            <button class="cancelBtn" id="btnCancel">✕ CANCEL</button>
+            <button class="endBtn" id="btnEnd">END TURN ⏳</button>
+            <button class="surrBtn" id="btnSurrender">🏳 SURRENDER</button>
+          </div>
+        </div>
+        <div class="handWrap"><div class="row" id="p1hand"></div></div>
+      </div>
     </div>
 
     <div class="side">
-      <div class="decks">
-        <h2>DECKS</h2>
-        <div class="deckBox">
-          <div class="deckPile" id="d1">30</div>
-          <div class="deckInfo"><b id="d1name">Player 1</b><br><span id="d1sub">30 cards left</span></div>
-        </div>
-        <div class="deckBox">
-          <div class="deckPile" id="d2">30</div>
-          <div class="deckInfo"><b id="d2name">Player 2</b><br><span id="d2sub">30 cards left</span></div>
-        </div>
+      <div class="decks"><h2>DECKS</h2>
+        <div class="deckBox"><div class="deckPile" id="d1">30</div>
+          <div class="deckInfo"><b id="d1name">Player 1</b><br><span id="d1sub">30 cards left</span></div></div>
+        <div class="deckBox"><div class="deckPile" id="d2">30</div>
+          <div class="deckInfo"><b id="d2name">Player 2</b><br><span id="d2sub">30 cards left</span></div></div>
       </div>
       <div class="log"><h2>BATTLE LOG</h2><div id="logBody"></div></div>
     </div>
   </main>
 </div>
 
+<div id="actionBar">
+  <span id="barLabel"></span>
+  <button id="actAttack">⚔ Attack</button>
+  <button id="actAbility">✦ Ability</button>
+  <button id="actNoTarget" style="display:none">◎ No Target</button>
+  <button id="actCancel">✕ Cancel</button>
+</div>
+<div id="tip"></div>
+
+<div id="overlay">
+  <h1>VICTORY</h1>
+  <div class="who" id="winnerText">—</div>
+  <button class="bigbtn" id="btnQuit">CLOSE</button>
+</div>
+
 <script>
-let state=null, attacker=-1, charTurn=1, taken={}, names={1:'Player 1',2:'Player 2'};
+let state=null, charTurn=1, taken={}, names={1:'Player 1',2:'Player 2'};
+let selCard=-1;    // secili KENDI arena kartimiz (battlefield indeksi)
+let mode=null;     // null | 'attack' | 'cardAbility' | 'heroAbility'
 
-function show(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
-}
-function logLine(t){
-  if(!t) return;
-  const box=document.getElementById('logBody');
-  String(t).split('\n').forEach(l=>{ if(!l.trim())return;
-    const d=document.createElement('div'); d.textContent=l; box.appendChild(d); });
-  box.scrollTop=box.scrollHeight;
-}
-async function pullLog(){ logLine(await window.getLog()); }
-async function fetchState(){ return await window.getState(); }   // webview zaten parse eder
+const $=id=>document.getElementById(id);
 
-/* --- 1 -> 2 --- */
-document.getElementById('btnToNames').onclick=()=>show('scNames');
-
-/* --- 2 -> 3 --- */
-document.getElementById('btnToChar').onclick=async ()=>{
-  names[1]=document.getElementById('n1').value.trim()||'Player 1';
-  names[2]=document.getElementById('n2').value.trim()||'Player 2';
-  await window.startGame(names[1],names[2]);
-  await pullLog();
-  state=await fetchState(); charTurn=1; taken={};
-  drawCharGrid(); show('scChar');
+/* Karakter yetenek aciklamalari.
+   NOT: Bunlari C++'tan okuyamiyoruz cunku yetenekler lambda; kodunda karakterler icin
+   aciklama alani yok. Havuz anahtarina gore burada tutuluyor.
+   Bir karakterin lambda'sini degistirirsen buradaki metni de guncelle. */
+const HERO_DESC = {
+  "Hope of the Algeron":
+    "Heals every allied card by 10 and grants them +5 damage.\nThe damage buff is reverted when the effect expires.",
+  "First Prince of Kangreya":
+    "Halves the damage of every enemy card.\nOriginal values are restored exactly when the effect expires.",
+  "First Daughter of Loras":
+    "Makes all allied cards AND the hero invulnerable.\nInvulnerability is removed when the effect expires.",
+  "Queen of Kangreya":
+    "Stuns every enemy card, so they cannot act.\nThe stun is lifted when the effect expires.",
+  "Knife Master":
+    "Throws a knife: 2 damage to the target and marks it.\nEvery 5th knife detonates all marks, dealing 5 damage per hit stacked on each marked target.",
+  "Blessed of the Twins":
+    "Marks the target with reflection: damage dealt to it bounces back to the attacker (1/3).\nOnly the last 3 marked cards stay protected."
 };
+function heroDesc(key){ return HERO_DESC[key] || "No description available for this character."; }
+let heroKeyByName = {};   // karakter adi -> havuz anahtari (aciklamayi bulmak icin)
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on');}
+function logLine(t){ if(!t)return; const b=$('logBody');
+  String(t).split('\n').forEach(l=>{if(!l.trim())return;const d=document.createElement('div');d.textContent=l;b.appendChild(d);});
+  b.scrollTop=b.scrollHeight;}
+async function pullLog(){ logLine(await window.getLog()); }
+async function fetchState(){ return await window.getState(); }   // webview zaten JSON.parse eder
 
-/* --- 3 : character selection --- */
+/* ---------- hover aciklama ---------- */
+function tipOn(html,ev){const t=$('tip');t.innerHTML=html;t.style.display='block';tipMove(ev);}
+function tipMove(ev){const t=$('tip');let x=ev.clientX+16,y=ev.clientY+16;
+  if(x+t.offsetWidth>innerWidth-10)x=ev.clientX-t.offsetWidth-16;
+  if(y+t.offsetHeight>innerHeight-10)y=innerHeight-t.offsetHeight-10;
+  t.style.left=x+'px';t.style.top=y+'px';}
+function tipOff(){$('tip').style.display='none';}
+function attachTip(el,html){
+  el.addEventListener('mouseenter',e=>tipOn(html,e));
+  el.addEventListener('mousemove',tipMove);
+  el.addEventListener('mouseleave',tipOff);
+}
+
+/* ---------- ekran gecisleri ---------- */
+$('btnToNames').onclick=()=>show('scNames');
+$('btnToChar').onclick=async()=>{
+  names[1]=$('n1').value.trim()||'Player 1'; names[2]=$('n2').value.trim()||'Player 2';
+  await window.startGame(names[1],names[2]); await pullLog();
+  state=await fetchState(); charTurn=1; taken={}; drawCharGrid(); show('scChar');
+};
 function drawCharGrid(){
-  document.getElementById('charWho').textContent = `${names[charTurn]} — choose your character`;
-  const g=document.getElementById('charGrid'); g.innerHTML='';
+  $('charWho').textContent=`${names[charTurn]} — choose your character`;
+  const g=$('charGrid'); g.innerHTML='';
   state.characterPool.forEach(e=>{
-    const c=e.character;
-    const d=document.createElement('div');
+    const c=e.character, d=document.createElement('div');
     d.className='charCard'+(taken[e.key]?' taken':'');
-    d.innerHTML=`<div class="cn">${c?c.name:'?'}</div>
-                 <div class="ck">${e.key}</div>
-                 <div class="cs">HP ${c?c.hp:'-'} &nbsp;|&nbsp; MANA ${c?c.mana:'-'}</div>`;
-    if(!taken[e.key]) d.onclick=async ()=>{
-      await window.chooseCharacter(charTurn,e.key); taken[e.key]=true; await pullLog();
-      if(charTurn===1){ charTurn=2; state=await fetchState(); drawCharGrid(); }
-      else { await refresh(); show('scGame'); }
+    d.innerHTML=`<div class="cn">${c?c.name:'?'}</div><div class="ck">${e.key}</div>
+      <div>HP ${c?c.hp:'-'} | MANA ${c?c.mana:'-'}</div>`;
+    if(c){
+      heroKeyByName[c.name]=e.key;   // aciklama aramasi icin
+      attachTip(d,`<b>${c.name}</b>\n${heroDesc(e.key)}\n\nHP ${c.hp}   Mana ${c.mana}\nAbility cost ${c.abilityCost}\nCooldown ${c.cooldown} turn(s)\nEffect lasts ${c.duration} turn(s)`);
+    }
+    if(!taken[e.key]) d.onclick=async()=>{
+      await window.chooseCharacter(charTurn,e.key); taken[e.key]=true; await pullLog(); tipOff();
+      if(charTurn===1){charTurn=2; state=await fetchState(); drawCharGrid();}
+      else {await refresh(); show('scGame');}
     };
     g.appendChild(d);
   });
 }
 
-/* --- 4 : game board --- */
-async function refresh(){
-  state=await fetchState();
+/* ---------- HEDEFE UYGULA (tek nokta) ---------- */
+async function execOn(targetIdx){
+  tipOff();
   const cur=state.currentPlayer;
-  document.getElementById('tour').textContent='Turn: '+state.tour;
-  document.getElementById('turnBadge').textContent =
-    (cur===1?state.player1.name:state.player2.name).toUpperCase()+"'S TURN";
-  document.getElementById('p1title').innerHTML = title(state.player1,1,cur);
-  document.getElementById('p2title').innerHTML = title(state.player2,2,cur);
+  if(mode==='attack')           await window.attack(cur, selCard, targetIdx);
+  else if(mode==='cardAbility') await window.useCardAbility(cur, selCard, targetIdx);
+  else if(mode==='heroAbility') await window.useCharacterAbility(cur, targetIdx);
+  selCard=-1; mode=null;
+  await pullLog(); await refresh();
+}
+function setMode(m){ mode=m; renderAll(); }     // mod degisince HER SEY yeniden cizilir
+function clearSel(){ selCard=-1; mode=null; renderAll(); }
 
-  // sirasi gelen oyuncunun bolgesini vurgula
-  document.getElementById('z1').className='zone'+(cur===1?' active':' dim');
-  document.getElementById('z2').className='zone'+(cur===2?' active':' dim');
+/* ---------- eylem cubugu (sabit konum) ---------- */
+$('actAttack').onclick  =()=>setMode('attack');
+$('actAbility').onclick =()=>setMode('cardAbility');
+$('actCancel').onclick  =clearSel;
+$('actNoTarget').onclick=async()=>{ await execOn(-1); };   // -1 = hedefsiz (AoE)
+$('btnCancel').onclick  =clearSel;
 
+function renderActionBar(){
+  const bar=$('actionBar'), lbl=$('barLabel');
+  const bAtk=$('actAttack'), bAb=$('actAbility'), bNT=$('actNoTarget');
+  if(mode){
+    lbl.textContent = mode==='attack' ? 'Choose a TARGET to attack:'
+                   : mode==='cardAbility' ? 'Choose a TARGET for the card ability:'
+                   : 'Choose a TARGET for the hero ability:';
+    // Hedef ZORUNLU: yetenek lambda'larin target'i null kontrolsuz kullaniyor (crash olurdu).
+    bAtk.style.display='none'; bAb.style.display='none'; bNT.style.display='none';
+    bar.style.display='flex'; return;
+  }
+  if(selCard>=0){
+    const c=state.battlefield[selCard];
+    lbl.textContent=(c?c.name:'')+' — what will it do?';
+    bAtk.style.display='inline-block'; bAb.style.display='inline-block'; bNT.style.display='none';
+    // Ability butonuna gelince yetenek aciklamasi (senin lambda mesajindan)
+    if(c) attachTip(bAb, `<b>${c.name} — Ability</b>\n${c.abilityDesc||'(no description)'}\n\nCost: ${c.abilityCost} mana`);
+    if(c) attachTip(bAtk, `<b>Normal Attack</b>\nDamage ${c.dmgMin}–${c.dmgMax}\n(base ${c.dmgMin} + random 0–${c.randMax})`);
+    bar.style.display='flex'; return;
+  }
+  bar.style.display='none';
+}
+
+/* ---------- tahta ---------- */
+async function refresh(){ state=await fetchState(); renderAll(); }
+
+function renderAll(){
+  const cur=state.currentPlayer;
+  $('tour').textContent='Turn: '+state.tour;
+  $('turnBadge').textContent=(cur===1?state.player1.name:state.player2.name).toUpperCase()+"'S TURN";
+  $('lane1').className='lane'+(cur===1?' active':' dim');
+  $('lane2').className='lane'+(cur===2?' active':' dim');
+  $('modeHint').textContent = mode ? 'Targeting…' : '';
+  // CANCEL sadece iptal edilecek bir sey varsa gorunur (secim veya hedefleme modu)
+  $('btnCancel').style.display = (selCard>=0 || mode) ? 'inline-block' : 'none';
+  // Oyun bittiyse sonuc ekranini goster
+  if(state.gameOver) showGameOver(state.winner);
+  renderHero(1,state.player1,cur);
+  renderHero(2,state.player2,cur);
   deckPanel();
   drawHand('p1hand',state.player1,1,cur);
   drawHand('p2hand',state.player2,2,cur);
   drawArena(cur);
+  renderActionBar();
 }
-function title(p,idx,cur){
-  const c=p.character; const you = idx===cur ? `<span class="youtag">TURN</span>` : '';
-  return `${p.name.toUpperCase()} ${you} ` + (c?`&nbsp; ${c.name} &nbsp;(HP ${c.hp} | MANA ${c.mana} | CD ${c.cooldown})`:'');
+
+function renderHero(idx,p,cur){
+  const c=p.character, h=$('hero'+idx), ab=$('ab'+idx);
+  h.querySelector('.hn').textContent  = c?c.name:'—';
+  h.querySelector('.hhp').textContent = c?c.hp:'-';
+  h.querySelector('.hmana').textContent = c?c.mana:'-';
+  $('harmor'+idx).textContent=(c&&c.armor>0)?c.armor:'';
+  $('harmor'+idx).style.display=(c&&c.armor>0)?'flex':'none';
+  $('hstun'+idx).textContent=(c&&c.stunned)?'STUN':'';
+  $('hstun'+idx).style.display=(c&&c.stunned)?'block':'none';
+  // Action / Ability puanlari (senin actionPoint & abilityPoint degiskenlerin)
+  $('meta'+idx).innerHTML=`<b>${p.name}</b><br>`+
+    `Actions <b>${p.actionPoint}</b>/3<br>Hero ability <b>${p.abilityPoint}</b>/1`+
+    (c?`<br>CD ${c.cooldown}`:'');
+  if(c) attachTip(h,`<b>${c.name}</b>\n${heroDesc(heroKeyByName[c.name])}\n\n${p.name}\nHP ${c.hp}   Mana ${c.mana}   Armor ${c.armor}\n${c.stunned?'STUNNED\n':''}Ability cost ${c.abilityCost}\nCooldown ${c.cooldown} turn(s)\nEffect lasts ${c.duration} turn(s)\n\nActions left ${p.actionPoint}/3   Hero ability left ${p.abilityPoint}/1`);
+
+  // Karakterler de HEDEF olabilir (Character : IDamageable)
+  // Kendi karakterin gecerli hedef degil (senin owner kuralin) -> sadece RAKIP portre isaretlenir
+  const heroIsTarget = !!mode && !!c && idx!==cur;
+  h.classList.toggle('tgt', heroIsTarget);
+  h.onclick = async ()=>{
+    if(!mode || !c) return;                 // mode CANLI okunuyor
+    if(idx===cur){ logLine('You cannot target your own character.'); return; }
+    await execOn(idx===1 ? -2 : -3);        // -2 = P1 karakteri, -3 = P2 karakteri
+  };
+
+  // abilityPoint bittiyse de kullanilamaz (senin tur basina 1 kural)
+  const usable = c && cur===idx && c.ready && c.mana>=c.abilityCost && p.abilityPoint>0;
+  ab.className='abilityBtn'+(usable?'':' off')+(mode==='heroAbility'&&cur===idx?' armed':'');
+  ab.querySelector('span').textContent=c?c.abilityCost:'-';
+  if(c) attachTip(ab,`<b>${c.name} — Hero Ability</b>\n${heroDesc(heroKeyByName[c.name])}\n\nCost ${c.abilityCost} mana\n${c.cooldown>0?`On cooldown: ${c.cooldown} turn(s) left`:'Ready'}\nLasts ${c.duration} turn(s)\nUses left this turn: ${p.abilityPoint}/1\n\nClick, then pick any target (card or hero) — or "No Target" for area effects.`);
+  ab.onclick=()=>{ if(!usable) return; selCard=-1; setMode('heroAbility'); };
 }
+
 function deckPanel(){
-  document.getElementById('d1').textContent=state.player1.deckCount;
-  document.getElementById('d2').textContent=state.player2.deckCount;
-  document.getElementById('d1name').textContent=state.player1.name;
-  document.getElementById('d2name').textContent=state.player2.name;
-  document.getElementById('d1sub').textContent=state.player1.deckCount+' cards left';
-  document.getElementById('d2sub').textContent=state.player2.deckCount+' cards left';
+  $('d1').textContent=state.player1.deckCount; $('d2').textContent=state.player2.deckCount;
+  $('d1name').textContent=state.player1.name;  $('d2name').textContent=state.player2.name;
+  $('d1sub').textContent=state.player1.deckCount+' cards left';
+  $('d2sub').textContent=state.player2.deckCount+' cards left';
 }
-function cardEl(c, extra, onField){
+
+function cardEl(c,extra,onField,noAp){
   const d=document.createElement('div');
-  let cls='card '+(extra||'');
-  if(c.owner===2) cls+=' p2';
-  if(onField && !c.active) cls+=' sick';
+  let cls='card '+(extra||''); if(c.owner===2)cls+=' p2'; if(onField&&!c.active)cls+=' sick';
   d.className=cls;
-  const b=[];
-  if(c.stunned)b.push('STUN'); if(c.invulnerable)b.push('IMMUNE');
+  const b=[]; if(c.stunned)b.push('STUN'); if(c.invulnerable)b.push('IMMUNE');
   if(c.marked)b.push('MARKED'); if(c.armor>0)b.push('ARMOR '+c.armor);
-  const sick = (onField && !c.active) ? `<div class="sickTag">💤 SICK</div>` : '';
-  d.innerHTML=`<div class="cost">${c.cost}</div>${sick}
-     <div class="cname">${c.name}</div>
-     <div class="stat"><span>HP</span><b>${c.hp}</b></div>
-     <div class="stat"><span>DMG</span><b>${c.dmg}</b></div>
-     <div class="badges">${b.join(' · ')}</div>`;
+  d.innerHTML=`<div class="cost">${c.cost}</div>${onField&&!c.active?'<div class="sickTag">💤</div>':''}
+    ${noAp?'<div class="noapTag">NO ACTION</div>':''}
+    <div class="cname">${c.name}</div>
+    <div class="spacer"></div>
+    <div class="stat"><span>HP</span><b>${c.hp}</b></div>
+    <div class="stat"><span>DMG</span><b>${c.dmgMin}–${c.dmgMax}</b></div>
+    <div class="badges">${b.join(' · ')}</div>`;
+  // HASAR ARALIGI: kartin getMaxRandomBonus() degeri (senin kodundan)
+  attachTip(d, `${c.info}`
+    +`\nDamage range: ${c.dmgMin}–${c.dmgMax}  (base ${c.dmgMin} + random 0–${c.randMax})`
+    +(c.abilityDesc?`\n\n<b>ABILITY</b> (${c.abilityCost} mana)\n${c.abilityDesc}`:`\nAbility cost: ${c.abilityCost} mana`)
+    +(onField&&!c.active?'\n\nCannot act this turn (summoning sickness).':'')
+    +(noAp?'\n\nNo action points left this turn.':''));
   return d;
 }
+
 function drawHand(id,p,idx,cur){
-  const box=document.getElementById(id); box.innerHTML='';
-  if(!p.hand.length){ box.innerHTML='<div class="empty">Hand empty</div>'; return; }
-  const myturn = idx===cur;
-  const mana = p.character?p.character.mana:0;
+  const box=$(id); box.innerHTML='';
+  if(!p.hand.length){box.innerHTML='<div class="empty">Hand empty</div>';return;}
+  const my=idx===cur, mana=p.character?p.character.mana:0;
   p.hand.forEach((c,i)=>{
-    const ok = myturn && mana>=c.cost;
+    const ok=my&&mana>=c.cost;
     const el=cardEl(c, ok?'cheap':'poor', false);
-    el.onclick=async ()=>{
-      if(!myturn){ logLine(`It's not ${p.name}'s turn.`); return; }
-      if(mana<c.cost){ logLine(`Not enough mana: ${c.name} (${c.cost}) — you have ${mana}`); return; }
-      await window.playCard(idx,i); await pullLog(); await refresh();
+    el.onclick=async()=>{
+      if(mode){ logLine('Finish or cancel the current action first.'); return; }
+      if(!my){ logLine('It is not '+p.name+' turn.'); return; }
+      if(mana<c.cost){ logLine('Not enough mana: '+c.name+' ('+c.cost+') you have '+mana); return; }
+      tipOff(); await window.playCard(idx,i); await pullLog(); await refresh();
     };
     box.appendChild(el);
   });
 }
+
 function drawArena(cur){
-  const top=document.getElementById('arenaTop'), bot=document.getElementById('arenaBottom');
-  top.innerHTML=''; bot.innerHTML='';
-  let any1=false, any2=false;
+  const top=$('arenaTop'), bot=$('arenaBottom'); top.innerHTML=''; bot.innerHTML='';
+  let a1=false,a2=false;
+  const curP = cur===1?state.player1:state.player2;
+  const outOfAp = curP.actionPoint<=0;                    // action point bitti mi
   state.battlefield.forEach((c,i)=>{
-    const mineActive = (c.owner===cur) && c.active;   // saldirgan olabilir mi
-    const el=cardEl(c, (attacker===i?'sel':''), true);
-    el.onclick=async ()=>{
-      if(attacker===-1){
-        if(!mineActive){
-          logLine(c.owner!==cur ? "Select your OWN card to attack with."
-                                : `${c.name} can't act this turn (summoning sickness).`);
-          return;
-        }
-        attacker=i; drawArena(cur); return;
+    const noAp = (c.owner===cur) && outOfAp;              // kendi kartlarim kullanilamaz
+    // Senin hit()/useUniquePower() kuralin: ayni sahibe vurulamaz -> sadece RAKIP kartlar hedef.
+    const validTarget = mode && (c.owner!==cur);
+    const el=cardEl(c,(selCard===i?'sel ':'')+(validTarget?'tgt':'')+(noAp?' noap':''),true,noAp);
+    el.onclick=async()=>{
+      if(mode){
+        if(c.owner===cur){ logLine('You cannot target your own team.'); return; }
+        await execOn(i); return;                          // hedefleme modunda: uygula
       }
-      if(attacker===i){ attacker=-1; drawArena(cur); return; }
-      await window.attack(cur, attacker, i); attacker=-1;
-      await pullLog(); await refresh();
+      if(c.owner!==cur){ logLine('Select your OWN card first.'); return; }
+      if(outOfAp){ logLine('No action points left this turn — end your turn.'); return; }
+      if(!c.active){ logLine(c.name+' cannot act this turn (summoning sickness).'); return; }
+      selCard=i; renderAll();                            // secildi -> eylem cubugu cikar
     };
-    if(c.owner===2){ top.appendChild(el); any2=true; } else { bot.appendChild(el); any1=true; }
+    if(c.owner===2){top.appendChild(el);a2=true;} else {bot.appendChild(el);a1=true;}
   });
-  if(!any2) top.innerHTML='<div class="empty">— Player 2 has no cards in the arena —</div>';
-  if(!any1) bot.innerHTML='<div class="empty">— Player 1 has no cards in the arena —</div>';
+  if(!a2) top.innerHTML='<div class="empty">— no cards —</div>';
+  if(!a1) bot.innerHTML='<div class="empty">— no cards —</div>';
 }
-document.getElementById('btnEnd').onclick=async ()=>{
-  await window.endTurn(); attacker=-1; await pullLog(); await refresh();
+
+$('btnEnd').onclick=async()=>{ tipOff(); selCard=-1; mode=null;
+  await window.endTurn(); await pullLog(); await refresh(); };
+
+/* ---------- teslim olma ---------- */
+$('btnSurrender').onclick=async()=>{
+  const cur=state.currentPlayer;
+  const me=(cur===1?state.player1:state.player2).name;
+  if(!confirm(`${me}, are you sure you want to surrender?\nYour opponent will win the game.`)) return;
+  tipOff(); selCard=-1; mode=null;
+  await window.surrender(cur);
+  await pullLog(); await refresh();
 };
+
+/* ---------- oyun sonu ---------- */
+function showGameOver(winner){
+  tipOff();
+  $('actionBar').style.display='none';
+  $('winnerText').textContent = winner + ' wins!';
+  $('overlay').style.display='flex';
+}
+$('btnQuit').onclick=()=>{ $('overlay').style.display='none'; };
 </script>
 </body>
 </html>

@@ -12,8 +12,6 @@
 
 // DmgType artik Effect.h'den geliyor (yukarida include edildi) -> tek tanim.
 
-// NOT: Bu sinif su an hicbir yerde kullanilmiyor (main akisi hala card tabanli calisiyor).
-// Icinde birkac hata var (asagida mesajda anlattim) ama senin verini bozmamak icin oldugu gibi biraktim.
 class Character : public IDamageable {
     using Ability = std::function<void ( IDamageable* target,
         Deck<card*>& battlefield,
@@ -29,8 +27,8 @@ class Character : public IDamageable {
         Ability ability, reverseAbility;
         bool invulnerable = false;
         bool reflection_marked = false;
-        bool stunned;
-        Player* owner;
+        bool stunned = false;
+        Player* owner = nullptr;
 
         public:
 
@@ -41,7 +39,9 @@ class Character : public IDamageable {
             maxMana(maxMana),
             // Baslangic manasi: maxMana/3, taban 4 (min). maxMana 4'ten kucukse tavani asmasin diye min ile kirpiliyor.
             mana(std::min(maxMana, std::max(maxMana / 3, 4))),
-            abilityCoolDown(abilityCoolDown),
+            // [DUZELTME] 'abilityCoolDown(abilityCoolDown)' idi: parametre 'abilityCooldown' (kucuk d),
+            // uye ise 'abilityCoolDown' (buyuk D). Uye KENDISIYLE ilkleniyordu -> cop deger.
+            abilityCoolDown(abilityCooldown),
             abilityDuration(abilityDuration),
             abilityCost(abilityCost),
             ability(std::move(ability)),
@@ -50,6 +50,7 @@ class Character : public IDamageable {
             bool tryUseAbility(IDamageable* target, Deck<card*> battlefield, Deck<card*> allyTeam, Deck<card*> enemyTeam){
             if(currentCooldown > 0) return false;         // hazır değil
             if(!canAfford(abilityCost)) return false;     // [YENI] mana yetmiyorsa yetenek kullanilamaz
+            if(owner == target->getOwner()){return false;}
             if(ability) ability(target, battlefield, allyTeam, enemyTeam);
             currentCooldown = abilityCoolDown;            // beklemeyi başlat
             useMana(abilityCost);
@@ -106,6 +107,7 @@ class Character : public IDamageable {
 
             int getcurrentCooldown(){return currentCooldown;}
             int getAbilityDuration(){return abilityDuration;}
+            int getAbilityCost(){return abilityCost;}   // [GUI] yetenek butonunda maliyeti gostermek icin
 
             void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;}
             bool isInvulnerable(){return invulnerable;}

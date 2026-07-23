@@ -1,0 +1,19 @@
+--- Desteler Hazirlandi ve Karistirildi (Her oyuncuda 30 kart var) ---
+
+Alice chose character: Kont
+Bob chose character: Loras
+Alicehas drawn a card.
+Bobhas drawn a card.
+Alicehas drawn a card.
+Bobhas drawn a card.
+Alicehas drawn a card.
+Bobhas drawn a card.
+Alicehas drawn a card.
+Bobhas drawn a card.
+--- Characters chosen. Each player drew a 4-card opening hand. ---
+Alice played: Blacksmith Robot
+--- Bob's turn ---
+Bob played: Pyro-Technician
+Alicehas drawn a card.
+Bobhas drawn a card.
+--- New round. Both players drew a card. Alice's turn ---

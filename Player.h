@@ -73,9 +73,19 @@ class Player {
 
     
     bool useCharacterAbility(IDamageable* target, Deck<card*>& battlefield, Deck<card*>& enemyTeam){
-        if(activeCharacter == nullptr && abilityPoint == 0) return false;
+        // [DUZELTME 1] '&&' idi -> karakter varsa abilityPoint kontrolu hic calismiyordu. '||' olmali.
+        if(activeCharacter == nullptr || abilityPoint <= 0) return false;
+        // [DUZELTME 2] 'actionPoint--' idi -> karakter yetenegi yanlis sayaci dusuruyordu.
+        if(!activeCharacter->tryUseAbility(target, battlefield, team, enemyTeam)) return false;
+        abilityPoint--;   // sadece BASARILI kullanimda dus
+        return true;
+    }
+
+    // [YENI] Kart aksiyonu (saldiri / kart yetenegi) icin action point harcar.
+    bool spendActionPoint(){
+        if(actionPoint <= 0) return false;
         actionPoint--;
-        return activeCharacter->tryUseAbility(target, battlefield, team, enemyTeam);
+        return true;
     }
 
     void revertCharacterAbility(IDamageable* target, Deck<card*>& battlefield,
