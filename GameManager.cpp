@@ -142,7 +142,7 @@ void gameManager::startGame() {
     {
         auto protected_cards = std::make_shared<std::queue<card*>>();
         
-        character_pool.emplace("Blessed of the Twins", new Character("Octopus", 115, 12, 3, 4, 5, [protected_cards](IDamageable* target, Deck<card*>& battlefield,
+        character_pool.emplace("Blessed of the Twins", new Character("Octopus", 115, 12, 1, 4, 2, [protected_cards](IDamageable* target, Deck<card*>& battlefield,
                         Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
                             if(card* tc = dynamic_cast<card*>(target)){   // ayri card* degisken (target'i ezme)
                                 tc->setReflectionMarked(true);

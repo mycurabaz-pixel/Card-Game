@@ -9,6 +9,7 @@
 // mantigi C++'ta native calisir. WASM'a gerek yok.
 // ============================================================================
 
+#define WEBVIEW_IMPLEMENTATION
 #include "webview/webview.h"
 #include "GuiBridge.h"
 
