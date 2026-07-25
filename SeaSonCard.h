@@ -30,7 +30,9 @@ class SeaSonCard : public card {
     public:
 
     SeaSonCard(int range, DmgType dmgType, SeaSonType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int health, DmgType vulnurability, DmgType immunity, int powerDuration, int powerCost, AbilityFunction power, AbilityFunction reversePower)
-    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability, powerDuration, powerCost){
+    // [DUZELTME] TechCard ile ayni hata: base 'card' ctor'u (..., powerCost, powerDuration)
+    // bekliyor, burada ters geciliyordu -> yetenek maliyeti ile suresi yer degistiriyordu.
+    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability, powerCost, powerDuration){
         this->unique_ability = unique_ability;
         this->sType = type;
         this->uniquePower = power;

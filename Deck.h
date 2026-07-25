@@ -62,6 +62,12 @@ class Deck {
         return deck;
     }
 
+    // [YENI] Desteyi tamamen bosaltir (yeni oyun kurarken eski kartlar birikmesin diye).
+    void clear(){
+        active_deck.clear();
+        deck.clear();
+    }
+
 };
 
 #endif // DECK_H

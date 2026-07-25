@@ -19,9 +19,10 @@ enum DmgType{
 
 struct Effect
 {
-    int damage = 2;
-    int duration = 2;
-    int playedTour = 0;
+    DmgType effectType;
+    int damage;
+    int duration;
+    int playedTour;
 };
 
 #endif // EFFECT_H

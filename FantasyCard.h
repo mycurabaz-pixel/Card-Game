@@ -35,6 +35,11 @@ class fantasyCard : public card {
         this->unique_ability = unique_ability;
         this->fType = type;
         this->uniquePower = power;
+        // [DUZELTME] Bu atama YOKTU: reversePower parametresi aliniyor ama hicbir yere yazilmiyordu.
+        // Sonuc: fantasy kartlarinin SURELI etkileri hicbir zaman geri alinmiyordu
+        // (orn. Cruel Soldier hasarini 2 katina cikarip bir daha eski degerine donmuyordu).
+        // TechCard ve SeaSonCard'da bu atama zaten vardi.
+        this->reversePower = reversePower;
     }
 
     void random_unique_dmg();

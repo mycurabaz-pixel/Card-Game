@@ -21,6 +21,23 @@ void gameManager::setPlayers(std::string player1_name, std::string player2_name)
 
 void gameManager::startGame() {
 
+    // [YENI] YENIDEN BASLATMA TEMIZLIGI
+    // "Ana menuye don -> yeni oyun" ile startGame ikinci kez cagrilabildigi icin,
+    // onceki oyundan kalan her sey temizlenmeli. Aksi halde:
+    //   - master_deck.deck cleanmezse kartlar 60 -> 120 diye birikir,
+    //   - character_pool.emplace ayni anahtari EZMEZ -> eski (cooldown'lu) karakterler kalir
+    //     ve yeni new'lenenler sizar.
+    for(auto& kv : character_pool){ delete kv.second; }   // eski karakterleri sil (sizinti olmasin)
+    character_pool.clear();
+    master_deck.clear();
+    battle_field.clear();
+    timed_abilities.clear();
+    timed_card_abilities.clear();
+    all_cards_snapshot.clear();
+    turn_counter = 0;
+    tour_counter = 0;
+    isRunning = true;
+
     //===================
     //CHARACTER SELECTİON
     //===================
@@ -161,6 +178,27 @@ void gameManager::startGame() {
                         }));
     }
 
+    character_pool.emplace("Trickster", new Character("Bad Omen", 105, 15, 3, 4, 4, [](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                            
+        },
+    [](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                            
+    }));
+
+    // ==========================================
+    // [YENI] KARAKTER YETENEKLERININ HEDEF TARAFI
+    // NONE  -> hedef secilmez (lambda allyTeam/enemyTeam uzerinden toplu calisir); GUI'de USE butonu cikar
+    // ALLY  -> sadece kendi tarafi        ENEMY -> sadece rakip taraf (varsayilan)
+    // Yeni karakter eklersen yalnizca buraya bir satir yazman yeterli.
+    // ==========================================
+    character_pool.at("Hope of the Algeron")     ->setTargetSide(TargetSide::NONE); // tum takimi iyilestirir + hasar buffi
+    character_pool.at("First Prince of Kangreya")->setTargetSide(TargetSide::NONE); // tum rakip kartlarin hasarini yariya boler
+    character_pool.at("First Daughter of Loras") ->setTargetSide(TargetSide::NONE); // tum takimi + kendini dokunulmaz yapar
+    character_pool.at("Queen of Kangreya")       ->setTargetSide(TargetSide::NONE); // tum rakip kartlari sersemletir
+    character_pool.at("Blessed of the Twins")    ->setTargetSide(TargetSide::ALLY); // Octopus: dost karta reflection isareti
+    // "Knife Master" -> varsayilan ENEMY (tek hedefe bicak atar)
 
     // ==========================================
     // 20 FANTASY CARDS (With Lambda Abilities)
@@ -393,8 +431,8 @@ void gameManager::startGame() {
             std::cout << "-> Ability: Started a blizzard!" << std::endl;
             for(card* c: pitch.getCards()){
                 c->takeDamage(self, 2);
-                Effect effect;
-                c->addEffect(self->getDamageType(), effect);
+                Effect effect = {self->getDamageType(), 2,4,0};
+                c->addEffect(effect);
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -426,8 +464,8 @@ void gameManager::startGame() {
             std::cout << "-> Ability: Cast dark fear!" << std::endl;
            if(card* tempTarget = dynamic_cast<card*>(target)){
             tempTarget->takeDamage(self, 10);
-            Effect effect;
-            tempTarget->addEffect(self->getDamageType(), effect);
+            Effect effect = {self->getDamageType(), 2,2,0};
+            tempTarget->addEffect(effect);
            }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -436,7 +474,7 @@ void gameManager::startGame() {
     ));
 
     master_deck.addCardToDeck(new fantasyCard(
-        1, card::DmgType::NORMAL, fantasyCard::FantasyType::SOLDIER, "Barbarian", 4, 4, "Rage", 10, card::DmgType::MAGIC, card::DmgType::NORMAL, 2, 2,
+        1, card::DmgType::NORMAL, fantasyCard::FantasyType::SOLDIER, "Barbarian", 4, 4, "Rage", 10, card::DmgType::MAGIC, card::DmgType::SLICE, 2, 2,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Entered rage mode!" << std::endl;
             if(self){
@@ -449,6 +487,18 @@ void gameManager::startGame() {
                 self->updateDmgHit(self->getDmgHit()/2);
                 self->setDamageType(NORMAL);
             }
+        }
+    ));
+
+    master_deck.addCardToDeck(new fantasyCard(
+        3, card::DmgType::DARKNESS, fantasyCard::FantasyType::MAGICIAN, "Necromancer", 1, 4, "Revive", 16, card::DmgType::LIGHT, card::DmgType::DARKNESS, 0, 6,
+        [&](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            self->getOwner()->getGraveyard().top()->setHealth(self->getOwner()->getGraveyard().top()->getMaxHealth()/2);
+            battle_field.addCardToDeck(self->getOwner()->getGraveyard().top());
+            self->getOwner()->getGraveyard().pop();
+        },
+        [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+            
         }
     ));
 
@@ -512,14 +562,16 @@ void gameManager::startGame() {
     master_deck.addCardToDeck(new TechCard(
         2, card::DmgType::ANTIMAGIC, TechCard::TechnoType::SOLDIER, "Pulse Guardian", 5, 4, "Shield", 10, card::DmgType::SLICE, card::DmgType::MAGIC, 0, 4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
-            std::cout << "-> Ability: Emitted an electromagnetic wave!" << std::endl;
+            std::cout << "-> Ability:  Absorb electromagnetic waves!" << std::endl;
             if(self){
                 self->addArmor(2);
             }
             auto& effects = self->getEffects();
-            if(auto it = effects.find(LIGHTNING); it != effects.end()){
-                self->addArmor(it->second.duration * it->second.damage);
-                self->getEffects().erase(it);
+            for(int i = 0 ;i<effects.size();i++){
+                Effect e = effects[i];
+            if(e.effectType == LIGHTNING){
+                self->addArmor(e.duration * e.damage);
+            }
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -532,8 +584,8 @@ void gameManager::startGame() {
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Activated firewall shield!" << std::endl;
             self->addArmor(8);
-            Effect effect;
-            self->addEffect(FIRE, effect);
+            Effect effect = {FIRE, 3,4,6};
+            self->addEffect(effect);
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
             self->addArmor(-self->getArmor());
@@ -663,10 +715,10 @@ auto originalTarget = std::make_shared<IDamageable*>();
         1, card::DmgType::SLICE, TechCard::TechnoType::SOLDIER, "Saw Robot", 3, 4, "Slice and Dice", 8, card::DmgType::MAGIC, card::DmgType::NORMAL,0,4,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Overclocked the blades!" << std::endl;
-            Effect bleed = {2,4,0};
+            Effect bleed = {SLICE,2,4,0};
             if(card* tempTarget = dynamic_cast<card*>(target)){
                 tempTarget->takeDamage(self, 2);
-                tempTarget->addEffect(SLICE, bleed);
+                tempTarget->addEffect(bleed);
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -707,11 +759,12 @@ auto originalTarget = std::make_shared<IDamageable*>();
     master_deck.addCardToDeck(new TechCard(
         2, card::DmgType::DARKNESS, TechCard::TechnoType::TITAN, "Dark Matter Armor", 9, 0, "black shield", 30, card::DmgType::LIGHT, card::DmgType::DARKNESS, 1, 9,
         [originals](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
-            std::cout << "-> Ability: Created a black hole!" << std::endl;
+            std::cout << "-> Ability: Gave his Dark Energy to Allies" << std::endl;
             auto targets = targeting::selectTargets(allyTeam, 3);
             (*originals) = targets;
             for(card* c: targets){c->addArmor(self->getHealth()/3); c->setInvulnerable(true);}
             self->takeDamage(self, self->getHealth());
+            getInstance().checkTargetHealth(self);
         },
         [originals](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
             for(card* c : (*originals)){if(c->isDead()){continue;} c->setInvulnerable(false);}
@@ -856,26 +909,31 @@ auto originalTarget = std::make_shared<IDamageable*>();
 
 {
     auto tempTarget = std::make_shared<card*>(nullptr);
+    // [DUZELTME] Geri alirken kartin ESKI sahibini bilmek gerekiyor; onceden saklanmiyordu,
+    // revert 'c->setOwner((*tempTarget)->getOwner())' yaziyordu -> kart o an BIZE ait oldugu
+    // icin bu bir NO-OP'tu ve kart karsi tarafa hic donmuyordu. Artik orijinal sahip saklaniyor.
+    auto origOwner = std::make_shared<Player*>(nullptr);
 
     master_deck.addCardToDeck(new SeaSonCard(
         3, card::DmgType::MAGIC, SeaSonCard::SeaSonType::ORACLE, "Siren Song", 4, 1, "Deluge", 12, card::DmgType::ANTIMAGIC, card::DmgType::MAGIC, 2, 8,
-        [tempTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
+        [tempTarget, origOwner](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Charmed the enemy !" << std::endl;
             if(card* tTarget = dynamic_cast<card*>(target)){(*tempTarget) = tTarget;}
             for(card* c: enemyTeam.getCards()){
                 if(target == c){
+                    (*origOwner) = c->getOwner();      // [YENI] eski sahibi sakla (geri donus icin)
                     c->setOwner(self->getOwner());
                     allyTeam.addCardToDeck(c);
                     enemyTeam.removeCardFromDeck(c);
                 }
             }
         },
-        [tempTarget](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+        [tempTarget, origOwner](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
                 for(card* c: allyTeam.getCards()){
                 if((*tempTarget) == c){
-                    c->setOwner((*tempTarget)->getOwner());
-                    allyTeam.removeCardFromDeck(c);
+                    c->setOwner(*origOwner);           // [DUZELTME] ESKI sahibe geri ver (no-op degil)
                     enemyTeam.addCardToDeck(c);
+                    allyTeam.removeCardFromDeck(c);
                 }
             }
         }
@@ -914,12 +972,12 @@ auto originalTarget = std::make_shared<IDamageable*>();
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Pirate Cannoneer", 4, 2, "Blast", 9, card::DmgType::ICE, card::DmgType::FIRE, 0, 4,
+        1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Pirate Cannoneer", 4, 2, "Blast", 9, card::DmgType::ICE, card::DmgType::FIRE, 0, 5,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Used Greek fire!" << std::endl;
             for(card* c: enemyTeam.getCards()){
-                Effect effect ={2,4,0};
-                c->addEffect(FIRE, effect);
+                Effect effect ={FIRE, 2,3,0};
+                c->addEffect(effect);
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -982,8 +1040,8 @@ auto originalTarget = std::make_shared<IDamageable*>();
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Sharp tentacle slash!" << std::endl;
             auto targets = targeting::selectTargets(enemyTeam, 3);
-            Effect effect = {2,3,0};
-            for(card* c: targets){c->takeDamage(self, 6); c->addEffect(SLICE, effect);}
+            Effect effect = {SLICE, 2,3,0};
+            for(card* c: targets){c->takeDamage(self, 6); c->addEffect(effect);}
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){  
             
@@ -1018,7 +1076,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
             (*original)->setStunned(false);
         }
     ));
-    }   // [DUZELTME] satir 1004'te acilan '{' blogunun kapanisi eksikti
+    }
 
     master_deck.addCardToDeck(new SeaSonCard(
         1, card::DmgType::FIRE, SeaSonCard::SeaSonType::PIRATE, "Lava Captain", 5, 4, "Lava shot", 11, card::DmgType::ICE, card::DmgType::FIRE, 0, 5,
@@ -1026,8 +1084,8 @@ auto originalTarget = std::make_shared<IDamageable*>();
             std::cout << "-> Ability: Volcanic pirate attack!" << std::endl;
             if(card* tempTarget = dynamic_cast<card*>(target)){
             target->takeDamage(self, 6);
-            Effect effect = {2, 3, 0};
-            tempTarget->addEffect(FIRE, effect);
+            Effect effect = {FIRE, 2, 3, 0};
+            tempTarget->addEffect(effect);
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -1047,7 +1105,74 @@ auto originalTarget = std::make_shared<IDamageable*>();
         }
     ));
 
+    // ==========================================
+    // [YENI] KART YETENEKLERININ HEDEF TARAFI
+    //
+    // NONE -> HEDEFSIZ. Yetenek lambda'si 'target' parametresine hic dokunmuyor; etkisini
+    //         pitch / allyTeam / enemyTeam / self uzerinden yapiyor (alan hasari, tum takimi
+    //         iyilestirme, kendine buff...). Hedef secme adimi atlanir, arayuzde USE butonu cikar.
+    // ALLY -> tek hedefli ama SADECE kendi takimina (heal / armor).
+    // Listede olmayan her kart varsayilan ENEMY'de kalir (tek hedefe hasar verenler).
+    //
+    // Kural basit: lambda'da 'target' kullanilmiyorsa NONE, kullaniliyor ve faydaliysa ALLY.
+    // Bir kartin yetenegini degistirirsen sadece bu iki listeyi guncelle.
+    // NOT: Normal saldiri (hit) bundan etkilenmez, o her zaman sadece rakibe vurur.
+    // ==========================================
+    {
+        // --- Hedef almayan (AoE / toplu / kendine) yetenekler ---
+        static const std::vector<std::string> no_target_cards = {
+            // alan hasari / tum rakip takima vuranlar (tek cagrida hepsi)
+            "Flame Dragon", "Ancient Mage", "Cryomancer", "Doomsday Tank", "Pyro-Technician",
+            "Sonic Copter", "Nightmare Kraken", "Leviathan", "Captain Barbarossa",
+            "Pirate Cannoneer", "Stormbringer",
+            "Spellbreaker",
+            // tum dost takima iyilestirme / kalkan / buff
+            "Ice Healer", "Repair Unit", "Mermaid", "Deepwater Guardian", "Glacial Savior",
+            // sadece kendine buff atanlar (hedef gerekmiyor)
+            "Cruel Soldier", "Barbarian", "Ember Guardian", "Pulse Guardian", "Cyber Protector",
+            "Quantum Reflector", "Bio-Mechanical Golem", "Cybernetic Ninja"
+        };
+        // --- Tek hedefli ama sadece KENDI takimina kullanilabilenler ---
+        static const std::vector<std::string> ally_target_cards = {
+            "Frost Guardian",      // hedefe +10 can (buz kalkani)
+            "Dryad",               // hedefe +5 can
+            "Wind Healer",         // hedefe +5 can
+            "Blacksmith Robot",    // hedefe +5 armor
+            "Coral Healer",        // hedefe +7 can
+            "Monsoon Healer"       // hedefe armor
+        };
+        // --- COK HEDEFLI: lambda icinde selectTargets(pool, N) cagirir; oyuncu N kart secer.
+        //     side = secim havuzu (ALLY = kendi takimindan, ENEMY = rakip takimdan). ---
+        struct MultiTag { const char* name; TargetSide side; int count; };
+        static const std::vector<MultiTag> multi_target_cards = {
+            {"Rune Circuit",      TargetSide::ALLY,  3},   // 3 dost karta +1 hasar
+            {"Dark Matter Armor", TargetSide::ALLY,  3},   // 3 dost karta armor + dokunulmazlik
+            {"Storm Dragon",      TargetSide::ENEMY, 3},   // 3 rakip karta azalan hasar
+            {"Cyber Observer",    TargetSide::ENEMY, 3},   // 3 rakip karta hasar
+            {"Razor Tentacle",    TargetSide::ENEMY, 3},   // 3 rakip karta hasar + kanama
+        };
+        for(card* c : master_deck.getCards()){
+            for(const std::string& n : no_target_cards){
+                if(c->getName() == n){ c->setTargetSide(TargetSide::NONE); break; }
+            }
+            for(const std::string& n : ally_target_cards){
+                if(c->getName() == n){ c->setTargetSide(TargetSide::ALLY); break; }
+            }
+            for(const MultiTag& m : multi_target_cards){
+                if(c->getName() == m.name){ c->setTargetSide(m.side); c->setTargetCount(m.count); break; }
+            }
+        }
+    }
+
     master_deck.shuffle();
+
+    // [YENI] Kart galerisi icin anlik kopya: dagitim BASLAMADAN once master_deck'teki
+    // tum kart pointer'larini sakla. Dagitimdan sonra master_deck bosaldigi icin,
+    // GUI'deki "tum kartlari goruntule" bu listeyi kullanir. Yeni kart eklersen burada gorunur.
+    all_cards_snapshot.clear();
+    for(card* c : master_deck.getCards()){
+        all_cards_snapshot.push_back(c);
+    }
 
     // [DEGISIKLIK] Kart dagitma dongusu duzeltildi:
     // Onceki halde "removeTopCard()" cagrildiktan SONRA getTopCard()->setOwner(...) yapiliyordu;
@@ -1107,10 +1232,12 @@ void gameManager::advanceTurn(){
     if(player2.hasCharacter())
         player2.getCharacter()->setMana(player2.getCharacter()->getMana() + tour_counter + 2);
 
-        executeEffects();
+    // [DUZELTME] Asagidaki uc satir yukaridaki if'in govdesiymis gibi girintilenmisti
+    // (-Wmisleading-indentation). Aslinda her turda calismalari gerekiyor; girinti duzeltildi.
+    executeEffects();
 
-        tickCharacters(); // her tur sonunda: karakter cooldown'lari azalir + suresi dolan etkiler geri alinir
-        tickCards();
+    tickCharacters(); // her tur sonunda: karakter cooldown'lari azalir + suresi dolan etkiler geri alinir
+    tickCards();
         player1.setActionAndAbilityPoint(3, 1);
         player2.setActionAndAbilityPoint(3, 1);
         for(card* c : battle_field.getCards()){c->setActive(true);}
@@ -1122,16 +1249,20 @@ void gameManager::executeEffects(){
     // iterator gecersizlesiyordu. Iterator artik erase'in donusuyle guvenli ilerliyor.
     for(card* c: battle_field.getCards()){
         auto& current_effects = c->getEffects();
-        for(auto it = current_effects.begin(); it != current_effects.end(); ){
-            if((turn_counter - it->second.playedTour) % 2 == 0){
-                c->takeDamage(nullptr, it->second.damage);
-                it->second.duration--;
-            }
-            if(it->second.duration <= 0){
-                it = current_effects.erase(it);
-            }
-            else{
-                ++it;
+        // [DUZELTME] Onceki dongude uc ayri hata vardi:
+        //   1) 'Effect e = current_effects[i];' bir KOPYA aliyor, 'e.duration--' sadece kopyayi
+        //      azaltiyordu -> depodaki sure hic dusmuyor, etki KALICI hale geliyordu (sonsuz zehir).
+        //   2) erase(begin()+i) sonrasi i++ yapilinca erase edilenin YERINE gelen eleman atlaniyordu.
+        //   3) her tur tik atmasi gerekirken '% 2' ile sadece bazi turlarda tik atiyordu.
+        // Artik: her tur hasar uygulanir, sure depoda azalir, biten etki guvenli silinir.
+        for(size_t i = 0; i < current_effects.size(); ){
+            Effect& e = current_effects[i];   // REFERANS -> depoyu gercekten degistirir
+            c->takeDamage(nullptr, e.damage);
+            e.duration--;
+            if(e.duration <= 0){
+                current_effects.erase(current_effects.begin() + i);   // i'yi ARTIRMA (kayma)
+            } else {
+                ++i;
             }
         }
     }
@@ -1139,7 +1270,7 @@ void gameManager::executeEffects(){
 
 void gameManager::run() {
     int choice;
-    bool isStarted = true;
+    bool isStarted = false;   // [DUZELTME] 'true' idi -> "oyun baslatildi mi" bayragi anlamsizdi
     while (isRunning) {
         std::cout << "\n=== ANA MENU ===" << std::endl;
         std::cout << "1. Oyunculari Kaydet ve Oyunu Baslat" << std::endl;
@@ -1151,15 +1282,22 @@ void gameManager::run() {
 
         switch (choice) {
             case 1: {
-                if(isStarted){
-                std::string n1, n2;
-                std::cout << "1. Oyuncu ismi: "; std::cin >> n1; std::cin.ignore(256, '\n');
-                std::cout << "2. Oyuncu ismi: "; std::cin >> n2; std::cin.ignore(256, '\n');
-                setPlayers(n1, n2);
-                startGame();
-                isStarted = true;
-                break;
+                // [DUZELTME] 'break' if'in ICINDEydi: kosul saglanmazsa case 1 sessizce
+                // case 2'ye dusuyordu (-Wimplicit-fallthrough) ve istenmeden playTurn() calisiyordu.
+                // Ayrica isStarted 'true' baslatilip 'if(isStarted)' ile kontrol ediliyordu,
+                // yani bayrak hicbir sey yapmiyordu; artik oyun bir kez baslatiliyor.
+                if(!isStarted){
+                    std::string n1, n2;
+                    std::cout << "1. Oyuncu ismi: "; std::cin >> n1; std::cin.ignore(256, '\n');
+                    std::cout << "2. Oyuncu ismi: "; std::cin >> n2; std::cin.ignore(256, '\n');
+                    setPlayers(n1, n2);
+                    startGame();
+                    isStarted = true;
                 }
+                else{
+                    std::cout << "Oyun zaten basladi." << std::endl;
+                }
+                break;
             }
             case 2:
                 playTurn();
@@ -1234,15 +1372,27 @@ void gameManager::useCharacterAbility(Player& user, Player& enemy, IDamageable* 
     // Sureli etkiyse sadece NE ZAMAN geri alinacagini kaydet; NE geri alinacagini lambda biliyor.
     const int duration = user.getCharacterAbilityDuration();
     if(duration > 0){
-        timed_abilities.push_back(TimedAbility{ &user, &enemy, tour_counter + duration, target });
+        // [DUZELTME] 'usedCard' alani hic verilmiyordu (-Wmissing-field-initializers).
+        // Karakter yeteneginde kullanilan bir kart yok -> acikca nullptr yaziliyor.
+        timed_abilities.push_back(TimedAbility{ &user, &enemy, tour_counter + duration, target, nullptr });
     }
 }
 
 void gameManager::useCardAbility(Player& user, Player& enemy, IDamageable* target, card* usedCard){
-    if(usedCard){        
+    if(usedCard){
             user.useCardUniqueAbility(target, battle_field, usedCard, user.getTeam(), enemy.getTeam());
-    }
 
+            // [DUZELTME] Sureli kart etkileri HIC geri alinmiyordu: timed_card_abilities'e
+            // ekleme yoktu, tickCards da bos listeyi geziyordu. Bu yuzden kart kaynakli
+            // stun / invulnerable / vulnerability gibi bufflar KALICI olarak kaliyordu.
+            // Artik (karakter yetenegindeki gibi) sure > 0 ise geri alma zamani kaydediliyor.
+            // Geri NE alinacagini kartin kendi reversePower lambda'si biliyor (bos olabilir).
+            const int duration = usedCard->getPowerDuration();
+            if(duration > 0){
+                timed_card_abilities.push_back(
+                    TimedAbility{ &user, &enemy, tour_counter + duration, target, usedCard });
+            }
+    }
     else{
         return;
     }
@@ -1259,8 +1409,11 @@ void gameManager::tickCharacters(){
     //    takimlari geciyoruz (lambda isterse kullanabilir).
     for(auto it = timed_abilities.begin(); it != timed_abilities.end(); ){
         if(tour_counter >= it->expireTurn){
+            // [DUZELTME] Cagri bozuktu: parantez erken kapaniyor, noktali virgul yok ve
+            // argumanlar yarida kalmisti. revertCharacterAbility 4 parametre bekliyor:
+            // (target, battlefield, allyTeam, enemyTeam) -> allyTeam = etkiyi kullanan oyuncunun takimi.
             it->source->revertCharacterAbility(it->target, battle_field,
-            it->source->getTeam(), it->enemy->getTeam());
+                                               it->source->getTeam(), it->enemy->getTeam());
             it = timed_abilities.erase(it);
         } else {
             ++it;

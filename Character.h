@@ -23,11 +23,17 @@ class Character : public IDamageable {
         private:
 
         std::string name;
-        int health, maxHealth, armor = 0, mana, maxMana, abilityCoolDown, currentCooldown = 0, abilityDuration, abilityCost;
+        // [DUZELTME] Bildirim sirasi ctor init-list sirasiyla uyusmuyordu (-Wreorder).
+        // C++ uyeleri BILDIRIM sirasiyla ilklendigi icin bu tur uyumsuzluklar sessiz
+        // "cop deger" hatalarinin klasik kaynagidir; maxHealth/maxMana one alindi.
+        int maxHealth, health, armor = 0, maxMana, mana, abilityCoolDown, currentCooldown = 0, abilityDuration, abilityCost;
         Ability ability, reverseAbility;
         bool invulnerable = false;
         bool reflection_marked = false;
         bool stunned = false;
+        // [YENI] Yetenegin hedef tarafi. Varsayilan ENEMY -> eski davranis korunur;
+        // destek karakterleri ALLY, alan etkili olanlar NONE olarak isaretlenir (GameManager'da).
+        TargetSide targetSide = TargetSide::ENEMY;
         Player* owner = nullptr;
 
         public:
@@ -50,7 +56,18 @@ class Character : public IDamageable {
             bool tryUseAbility(IDamageable* target, Deck<card*> battlefield, Deck<card*> allyTeam, Deck<card*> enemyTeam){
             if(currentCooldown > 0) return false;         // hazır değil
             if(!canAfford(abilityCost)) return false;     // [YENI] mana yetmiyorsa yetenek kullanilamaz
-            if(owner == target->getOwner()){return false;}
+            // [DEGISIKLIK] Eskiden burada kosulsuz "ayni sahip -> false" vardi; bu yuzden
+            // heal/koruma yetenekleri KENDI takimina hic kullanilamiyordu. Ayrica target
+            // nullptr gelirse bu satir cokuyordu. Artik kural yetenegin targetSide'ina bagli:
+            //   ENEMY -> kendi tarafina kullanilamaz
+            //   ALLY  -> rakip tarafa kullanilamaz
+            //   NONE  -> hedefsiz (alan etkili); target beklenmez, nullptr normaldir
+            if(targetSide != TargetSide::NONE){
+                if(!target) return false;
+                const bool sameSide = (owner == target->getOwner());
+                if(targetSide == TargetSide::ENEMY && sameSide)  return false;
+                if(targetSide == TargetSide::ALLY  && !sameSide) return false;
+            }
             if(ability) ability(target, battlefield, allyTeam, enemyTeam);
             currentCooldown = abilityCoolDown;            // beklemeyi başlat
             useMana(abilityCost);
@@ -70,6 +87,13 @@ class Character : public IDamageable {
             }
 
             void takeDamage(IDamageable* attacker, int damage) override{
+                // [DUZELTME] Eskiden: if(owner == attacker->getOwner()){damage = 0;}
+                //  1) attacker nullptr olabiliyor (orn. Knife Master: takeDamage(nullptr, 2),
+                //     effect tick'leri) -> nullptr->getOwner() COKUYORDU.
+                //  2) Kosul negatif hasari (= iyilestirme) da sifirliyordu, yani kendi
+                //     karakterini iyilestiren yetenekler hicbir sey yapmiyordu.
+                // Artik sadece POZITIF hasar ve gercek bir saldirgan varken dost atesi engelleniyor.
+                if(attacker && damage > 0 && owner && owner == attacker->getOwner()) return;
                 if(invulnerable && damage > 0) return;
 
                 if(maxHealth >= health - damage){
@@ -77,8 +101,11 @@ class Character : public IDamageable {
                     else if(damage > 0){armor -= damage; return;}
                     health -= damage;
                 }
-                    else if((health - damage) % maxHealth > damage){
-                health = maxHealth;
+                else{
+                    // [DUZELTME] card::takeDamage ile ayni hata: buraya sadece tasan
+                    // iyilestirme dusuyor, yapilacak sey cani tavana kirpmak. Modulo
+                    // gereksizdi ve maxHealth 0 olursa sifira bolme ile cokuyordu.
+                    health = maxHealth;
                 }
                 if(attacker && damage > 0 && isReflectionMarked()){ reflect(attacker, damage); }
             }
@@ -108,6 +135,11 @@ class Character : public IDamageable {
             int getcurrentCooldown(){return currentCooldown;}
             int getAbilityDuration(){return abilityDuration;}
             int getAbilityCost(){return abilityCost;}   // [GUI] yetenek butonunda maliyeti gostermek icin
+
+            // [YENI] Yetenegin hedef tarafi. GUI de bunu okuyup hangi kartlarin hedeflenebilecegini
+            // isaretler; NONE ise hedef sormaz, USE butonu gosterir (GuiBridge -> "targetSide").
+            TargetSide getTargetSide(){return targetSide;}
+            void setTargetSide(TargetSide s){targetSide = s;}
 
             void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;}
             bool isInvulnerable(){return invulnerable;}

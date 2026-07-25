@@ -31,8 +31,7 @@ class card : public IDamageable {
     std::string cardName;
     int cost;
     int dmgHit;
-    std::map<DmgType, Effect> effects;
-    Effect hitEffect;
+    std::vector<Effect> effects;
     DmgType immunity;
     DmgType vulnurability;
     Player* owner = nullptr; // [DEGISIKLIK] owner artik nullptr ile basliyor (onceden ilklenmiyordu)
@@ -44,6 +43,12 @@ class card : public IDamageable {
     int powerDuration;
     int armor = 0;
     bool active = false;
+    // [YENI] Kart YETENEGININ hedef tarafi (normal saldiri hit() her zaman rakibe kalir).
+    // Varsayilan ENEMY -> hasar veren kartlar oldugu gibi calisir; destek kartlari
+    // GameManager'da tek yerden ALLY olarak isaretlenir.
+    TargetSide targetSide = TargetSide::ENEMY;
+    // [YENI] Yetenegin kac hedef aldigi (1 = tek, >1 = coklu selectTargets). GameManager'da isaretlenir.
+    int targetCount = 1;
 
 
     public:
@@ -68,6 +73,8 @@ class card : public IDamageable {
     DmgType getDamageType(){
         return dmgType;
     }
+
+    Effect hitEffect = {getDamageType(), 2,2,0};
 
     void setDamageType(DmgType dmgType){
         this->dmgType = dmgType;
@@ -105,9 +112,14 @@ class card : public IDamageable {
                     else if(damage > 0){armor -= damage; return;}
                     health -= damage;
                 }
-                    else if((health - damage) % maxHealth > damage){
-                health = maxHealth;
+                else{
+                    // [DUZELTME] Eskiden: else if((health - damage) % maxHealth > damage)
+                    // Buraya sadece TASAN IYILESTIRME (negatif damage) dusuyor; yapilmasi
+                    // gereken tek sey cani tavana kirpmak. Modulo hem gereksizdi hem de
+                    // maxHealth 0 olursa sifira bolme ile programi cokertiyordu.
+                    health = maxHealth;
                 }
+                if(health < 0) health = 0;   // [YENI] can eksiye dusmesin
                 if(attacker && damage > 0 && isReflectionMarked()){ reflect(attacker, damage); }
             }
 
@@ -116,12 +128,11 @@ class card : public IDamageable {
     }
 
     void setHealth(int health) override {
-        if(maxHealth>health){
-             this->health = health;
-        }
-        else{
-            health = maxHealth;
-        }
+        // [DUZELTME] else dalinda 'health = maxHealth;' yaziyordu: bu UYE degil PARAMETRE'ye
+        // atama yapiyor, yani fonksiyon hicbir sey yapmadan bitiyordu. Ayrica alt sinir yoktu.
+        if(health > maxHealth){ this->health = maxHealth; }
+        else if(health < 0)   { this->health = 0; }
+        else                  { this->health = health; }
     }
 
     void setMaxHealth(int maxHealth){
@@ -151,6 +162,13 @@ class card : public IDamageable {
     bool isDead(){return dead;}
     void setDead(bool dead){this->dead = dead;}
     int getAbilityCost(){return powerCost;}
+    int getPowerDuration(){return powerDuration;}   // [YENI] sureli kart etkisinin geri alinma zamani icin
+    
+    TargetSide getTargetSide(){return targetSide;}
+    void setTargetSide(TargetSide s){targetSide = s;}
+    
+    int getTargetCount(){return targetCount;}
+    void setTargetCount(int n){targetCount = n;}
     void setInvulnerable(bool invulnerable){this->invulnerable = invulnerable;} // [DUZELTME] == degil =
     bool isInvulnerable(){return invulnerable;}
     void setStunned(bool stunned){this->stunned = stunned;}
@@ -164,24 +182,19 @@ class card : public IDamageable {
     target->takeDamage(this, damage/3);
 }
 
-    void addEffect(DmgType hitType, Effect effect){
+    void addEffect(Effect effect){
 
-        if(hitType == NORMAL){return;}
+        if(effect.effectType == NORMAL){return;}
         
-        if(hitType == vulnurability){
+        if(effect.effectType == vulnurability){
             effect.damage *= 2;
         }
-        if(hitType != immunity){
-            if(auto it = effects.find(hitType); it != effects.end()){
-                effects.at(hitType).duration += effect.duration;
-            }
-            else{
-                effects.emplace(hitType, effect);
-            }
+        if(effect.effectType != immunity){
+            effects.push_back(effect);
         }
     }
 
-    std::map<DmgType, Effect>& getEffects(){
+    std::vector<Effect>& getEffects(){
         return effects;
     }
 

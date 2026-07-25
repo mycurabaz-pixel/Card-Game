@@ -32,6 +32,9 @@ std::string takeLog();
 // Arayuz bunu JSON.parse ile okuyup ekrani cizer.
 std::string stateJson();
 
+// [YENI] Master deck'teki tum kartlar (oyun basi anlik kopyasi). GUI kart galerisi kullanir.
+std::string masterDeckJson();
+
 // --- Olaylar (arayuz bunlari cagirir) ------------------------------------
 void startGame(const std::string& p1Name, const std::string& p2Name);
 

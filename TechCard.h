@@ -30,7 +30,11 @@ class TechCard : public card {
     public:
 
     TechCard(int range, DmgType dmgType, TechnoType type, std::string cardName, int cost, int dmgHit, std::string unique_ability, int health, DmgType vulnurability, DmgType immunity, int powerDuration, int powerCost, AbilityFunction power, AbilityFunction reversePower)
-    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability, powerDuration, powerCost){
+    // [DUZELTME] Base 'card' ctor'unun sirasi (..., powerCost, powerDuration). Burada
+    // (powerDuration, powerCost) diye TERS geciliyordu -> tech kartlarinin yetenek maliyeti
+    // ile suresi yer degistiriyordu (cogu yetenek 0 manaya geliyordu). fantasyCard dogru
+    // sirayla gecirdigi icin tutarsizlik vardi; ayni siraya cekildi.
+    : card(range, dmgType, type, cardName, cost, dmgHit, health, immunity, vulnurability, powerCost, powerDuration){
         this->unique_ability = unique_ability;
         this->tType = type;
         this->uniquePower = power;

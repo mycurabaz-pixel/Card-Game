@@ -104,6 +104,17 @@ int main(){
         return jsonStr(gui::takeLog());
     });
 
+    // [YENI] Kart galerisi: master deck'teki tum kartlari JSON olarak dondurur.
+    w.bind("getMasterDeck", [](std::string) -> std::string {
+        return gui::masterDeckJson();                  // zaten JSON dizisi
+    });
+
+    // [YENI] Uygulamayi kapatir (teslim ol / oyun sonu ekranindaki CLOSE butonu icin).
+    w.bind("quitApp", [&w](std::string) -> std::string {
+        w.terminate();
+        return "true";
+    });
+
     w.bind("startGame", [](std::string req) -> std::string {
         gui::startGame(argStr(req, 0), argStr(req, 1));
         return "true";
@@ -150,6 +161,14 @@ int main(){
     });
 
     w.navigate(htmlPath());
+
+    // [YENI] Pencere acilista TAM EKRAN (maximize) gelsin. set_size baslangic boyutu verir;
+    // burada native pencere tutamacini alip ShowWindow ile maximize ediyoruz.
+    auto win = w.window();
+    if(win.ok() && win.value()){
+        ShowWindow(static_cast<HWND>(win.value()), SW_MAXIMIZE);
+    }
+
     w.run();
     return 0;
 }

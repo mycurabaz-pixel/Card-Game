@@ -37,7 +37,7 @@ void fantasyCard::hit(IDamageable* target) {
     if(unique_dmg_buff > card::getCost()/2){
         std::cout << "ENEMY HAS BEEN CURSED" << std::endl;
         if(card* tempTarget = dynamic_cast<card*>(target)){
-            tempTarget->addEffect(getDamageType(), getHitEffect());
+            tempTarget->addEffect(getHitEffect());
         }
     }
     card::updateDmgHit(card::getDmgHit() - unique_dmg_buff);

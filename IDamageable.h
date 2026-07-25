@@ -7,6 +7,16 @@
 // Sadece pointer tuttugumuz icin ileri bildirim yeterli (Player.h include etmiyoruz -> dongu yok).
 class Player;
 
+// [YENI] Bir yetenegin KIMI hedefleyebilecegini belirtir.
+//   ENEMY -> sadece rakip taraf (tek hedefe hasar veren yetenekler)
+//   ALLY  -> sadece kendi tarafi (heal / armor / koruma / reflection mark)
+//   ANY   -> iki taraf da
+//   NONE  -> HEDEF YOK. Alan etkili (AoE) ve kendine/takima toplu etki eden yetenekler:
+//            lambda zaten allyTeam / enemyTeam / pitch / self uzerinden calisir, 'target'a
+//            hic dokunmaz. Bunlarda hedef secilmez; arayuzde USE butonu cikar.
+// Hem card hem Character bu tipi kullanir; ortak yer olsun diye buraya konuldu.
+enum class TargetSide { ENEMY, ALLY, ANY, NONE };
+
 class IDamageable {
 public:
     virtual void takeDamage(IDamageable* attacker, int dmg) = 0;

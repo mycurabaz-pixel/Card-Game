@@ -33,6 +33,10 @@ class gameManager {
     bool isRunning = true; // Oyunun durumunu kontrol eder
     std::vector<TimedAbility> timed_abilities;
     std::vector<TimedAbility> timed_card_abilities;
+    // [YENI] Oyun basinda master_deck'teki TUM kartlarin anlik kopyasi (pointer listesi).
+    // Dagitimdan sonra master_deck bosaldigi icin, "tum kartlari goruntule" ozelligi
+    // (GUI kart galerisi) bu listeyi kullanir. Yeni kart eklediginde burada gorunur.
+    std::vector<card*> all_cards_snapshot;
 
     gameManager(){}
 
@@ -50,6 +54,9 @@ class gameManager {
     void executeEffects();
     void run();
     void checkTargetHealth(IDamageable* target);
+    // [DUZELTME] Bildirimde fazladan 'Character* self' parametresi vardi ama GameManager.cpp'deki
+    // TANIM 3 parametreli -> derleme hatasi ("no matching function"). Tanimla ayni hale getirildi.
+    // (self'e gerek de yok: kullanicinin karakterine user.getCharacter() ile zaten ulasiliyor.)
     void useCharacterAbility(Player& user, Player& enemy, IDamageable* target);
     void useCardAbility(Player& user, Player& enemy, IDamageable* target, card* usedCard);
     void tickCharacters();
@@ -61,6 +68,8 @@ class gameManager {
     Player& getPlayer1(){ return player1; }
     Player& getPlayer2(){ return player2; }
     Deck<card*>& getBattlefield(){ return battle_field; }
+    // [YENI] Kart galerisi icin: oyun basinda alinan tum kart listesi.
+    std::vector<card*>& getAllCards(){ return all_cards_snapshot; }
     std::map<std::string, Character*>& getCharacterPool(){ return character_pool; }
     int getTourCounter() const { return tour_counter; }
     bool isGameRunning() const { return isRunning; }   // [GUI] oyun bitti mi

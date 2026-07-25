@@ -46,22 +46,29 @@ void init(){
     if(g_oldCoutBuf) return;                       // iki kez kurma
     g_oldCoutBuf = std::cout.rdbuf(g_logBuffer.rdbuf());
 
-    // Hedef secimini konsoldan degil arayuzden al.
+    // Hedef secimini konsoldan degil ARAYUZDEN al.
+    // [KOKTEN DUZELTME] g_pendingTargets artik aday-indeksi DEGIL, oyuncunun sectigi
+    // kartlarin ID'sini (private_card_id) tutar. ID'yi adaylardaki dogru indekse ceviriyoruz;
+    // boylece takim destesi ile arena sirasi farkli olsa bile DOGRU kartlar secilir.
+    // Onceki halde bos kuyrukta "ilk N kart" aliniyordu -> hedefler rastgele gorunuyordu.
+    // Artik uydurma dolgu YOK: kuyruk neyse o secilir; oyuncu az sectiyse selectTargets
+    // bir sonraki bos cagrida durur (oyunu kilitlemez).
     targeting::setTargetChooser(
         [](const std::vector<card*>& candidates, int count) -> std::vector<int> {
             std::vector<int> picked;
             while((int)picked.size() < count && !g_pendingTargets.empty()){
-                picked.push_back(g_pendingTargets.front());
+                int wantedId = g_pendingTargets.front();
                 g_pendingTargets.pop_front();
+                for(int i = 0; i < (int)candidates.size(); ++i){
+                    if(candidates[i]->getPrivateCardId() == wantedId){
+                        bool used = false;
+                        for(int p : picked) if(p == i){ used = true; break; }
+                        if(!used) picked.push_back(i);
+                        break;
+                    }
+                }
             }
-            // Arayuz secim gondermediyse: bos donmek yerine ilk uygun adaylari al,
-            // boylece oyun kilitlenmez (konsoldaki gibi bloklamak arayuzde olmaz).
-            for(int i = 0; (int)picked.size() < count && i < (int)candidates.size(); ++i){
-                bool used = false;
-                for(int p : picked) if(p == i){ used = true; break; }
-                if(!used) picked.push_back(i);
-            }
-            return picked;
+            return picked;   // arayuz surer; kuyruk bitince bos doner -> selectTargets durur
         });
 }
 
@@ -72,8 +79,9 @@ std::string takeLog(){
     return s;
 }
 
-void queueTargetSelection(const std::string& csvIndices){
-    std::stringstream ss(csvIndices);
+// [DEGISIKLIK] Artik aday-indeksi degil, secilen kartlarin ID'leri (private_card_id) kuyruklaniyor.
+void queueTargetSelection(const std::string& csvIds){
+    std::stringstream ss(csvIds);
     std::string item;
     while(std::getline(ss, item, ',')){
         try { g_pendingTargets.push_back(std::stoi(item)); } catch(...) {}
@@ -114,6 +122,44 @@ static int ownerIndex(card* c){
     return 0;
 }
 
+// [YENI] Hedef tarafini arayuze metin olarak gonderir ("enemy" / "ally" / "any").
+// gui.html bu alana bakip hangi kartlarin hedeflenebilecegini isaretler.
+static const char* sideStr(TargetSide s){
+    switch(s){
+        case TargetSide::ALLY: return "ally";
+        case TargetSide::ANY:  return "any";
+        case TargetSide::NONE: return "none";   // hedefsiz -> GUI hedef sormaz, USE butonu gosterir
+        default:               return "enemy";
+    }
+}
+
+// [YENI] DmgType -> kisa okunur ad (GUI efekt rozetinde gosterilir).
+static const char* dmgTypeName(DmgType t){
+    switch(t){
+        case ICE: return "Ice"; case FIRE: return "Fire"; case NATURE: return "Nature";
+        case WIND: return "Wind"; case MAGIC: return "Magic"; case ANTIMAGIC: return "Antimagic";
+        case DARKNESS: return "Dark"; case LIGHT: return "Light"; case SLICE: return "Slice";
+        case LIGHTNING: return "Lightning"; default: return "Normal";
+    }
+}
+
+// [YENI] Kartin uzerindeki sureli etkileri (zehir/kanama/DOT) JSON dizisine cevirir.
+// Onceden GUI'ye HIC gonderilmiyordu -> arayuzde efekt gorunmuyordu.
+static std::string effectsJson(card* c){
+    std::ostringstream o;
+    o << "[";
+    bool first = true;
+    for(const Effect& e : c->getEffects()){
+        if(!first) o << ",";
+        first = false;
+        o << "{\"type\":\"" << dmgTypeName(e.effectType) << "\""
+          << ",\"dmg\":"      << e.damage
+          << ",\"duration\":" << e.duration << "}";
+    }
+    o << "]";
+    return o.str();
+}
+
 static std::string cardJson(card* c){
     std::ostringstream o;
     o << "{"
@@ -129,6 +175,10 @@ static std::string cardJson(card* c){
       << ",\"active\":"      << (c->isActive() ? "true" : "false")   // summoning sickness: false = bu tur oynayamaz
       << ",\"owner\":"       << ownerIndex(c)                        // arenayi sahibe gore ayirmak icin
       << ",\"abilityCost\":" << c->getAbilityCost()
+      // [YENI] Kart yeteneginin hedef tarafi -> GUI hedef isaretlemesi bunu kullanir
+      << ",\"targetSide\":\"" << sideStr(c->getTargetSide()) << "\""
+      // [YENI] Kac hedef secilecek (>1 ise GUI coklu-secim modu acar)
+      << ",\"targetCount\":" << c->getTargetCount()
       // HASAR ARALIGI: artik SABIT formul yok. Kartin kendi getMaxRandomBonus()'u okunuyor,
       // yani random_unique_dmg'deki araligi degistirirsen GUI otomatik dogru gosterir.
       << ",\"dmgMin\":"      << c->getDmgHit()
@@ -139,6 +189,8 @@ static std::string cardJson(card* c){
       << ",\"info\":\""      << esc(c->getCardInfo()) << "\""
       // YETENEK ACIKLAMASI: lambda'daki "-> Ability: ..." mesajindan
       << ",\"abilityDesc\":\"" << esc(abilityDescOf(c->getName())) << "\""
+      // [YENI] Kartin uzerindeki sureli etkiler (zehir/kanama/DOT) -> GUI rozet olarak cizer
+      << ",\"effects\":" << effectsJson(c)
       << "}";
     return o.str();
 }
@@ -164,6 +216,8 @@ static std::string characterJson(Character* ch){
       << ",\"cooldown\":"   << ch->getcurrentCooldown()
       << ",\"abilityCost\":"<< ch->getAbilityCost()
       << ",\"duration\":"   << ch->getAbilityDuration()
+      // [YENI] Karakter yeteneginin hedef tarafi -> GUI hedef isaretlemesi bunu kullanir
+      << ",\"targetSide\":\"" << sideStr(ch->getTargetSide()) << "\""
       << ",\"ready\":"      << (ch->isAbilityReady() ? "true" : "false")
       // Character'a ekledigin yeni ozellikler (armor / stun) GUI'de de gorunur:
       << ",\"armor\":"      << ch->getArmor()
@@ -207,6 +261,13 @@ std::string stateJson(){
     }
     o << "]}";
     return o.str();
+}
+
+// [YENI] Master deck'teki TUM kartlar (oyun basi anlik kopyasi) JSON dizisi olarak.
+// GUI kart galerisi bunu okuyup her karti gosterir; yeni eklenen kart burada gorunur.
+std::string masterDeckJson(){
+    gameManager& gm = gameManager::getInstance();
+    return cardListJson(gm.getAllCards());
 }
 
 // ---------------------------------------------------------------------------
@@ -372,9 +433,13 @@ bool useCardAbility(int playerIdx, int cardIdx, int targetIdx){
     }
 
     IDamageable* target = resolveTarget(targetIdx);
-    // GUVENLIK: yetenek lambda'larinin cogu target'i null kontrolu yapmadan kullaniyor
+    // GUVENLIK: hedefli yeteneklerin lambda'lari target'i null kontrolu yapmadan kullaniyor
     // (ornegin target->takeDamage(...)). nullptr gecersek segfault olur -> hedefi zorunlu tutuyoruz.
-    if(!target){
+    // Istisnalar (nullptr GUVENLI, target'a dokunulmaz):
+    //   - targetSide == NONE : lambda pitch/allyTeam/enemyTeam/self uzerinden calisir.
+    //   - targetCount > 1     : COK hedefli; lambda selectTargets ile kuyruktan secer,
+    //                           'target' parametresini kullanmaz (arayuz -1 gecer).
+    if(!target && usedCard->getTargetSide() != TargetSide::NONE && usedCard->getTargetCount() <= 1){
         std::cout << "This ability needs a target." << std::endl;
         return false;
     }
@@ -397,11 +462,13 @@ bool useCharacterAbility(int playerIdx, int targetIdx){
     Player* enemy = playerByIndex(playerIdx == 1 ? 2 : 1);
     if(!user || !enemy || !user->hasCharacter()) return false;
 
-    // Hedef kart olabilir veya DUSMAN KARAKTER (-3 / -2).
+    // Hedef kart olabilir veya KARAKTER (-3 / -2).
     IDamageable* target = resolveTarget(targetIdx);
-    // GUVENLIK: karakter yetenegi lambda'lari da target'i null kontrolsuz kullanabiliyor
+    // GUVENLIK: hedefli karakter yeteneklerinin lambda'lari target'i null kontrolsuz kullaniyor
     // (orn. Kont: target->takeDamage(nullptr, 2)) -> hedefsiz cagri segfault ediyordu.
-    if(!target){
+    // [YENI] targetSide == NONE olan karakterler haric (Hope / First Prince / Loras / Queen):
+    // onlarin lambda'si sadece allyTeam / enemyTeam uzerinden calisir -> nullptr guvenli.
+    if(!target && user->getCharacter()->getTargetSide() != TargetSide::NONE){
         std::cout << "This hero ability needs a target." << std::endl;
         return false;
     }

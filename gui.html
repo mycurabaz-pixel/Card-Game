@@ -28,6 +28,35 @@
     background:linear-gradient(var(--parch),var(--parch2)); color:var(--ink);
     border:2px solid var(--gold); border-radius:6px; box-shadow:0 4px 10px #000a;}
   .bigbtn:hover{background:linear-gradient(var(--gold2),var(--gold));}
+  /* [YENI] ikincil (soluk) buton stili */
+  .bigbtn.ghost{font-size:14px; letter-spacing:2px; padding:9px 22px;
+    background:linear-gradient(#3a2f18,#2a2210); color:var(--gold2);}
+  .bigbtn.ghost:hover{background:linear-gradient(#544326,#3a2f18);}
+  /* [YENI] KART GALERISI overlay */
+  #galleryOverlay{position:fixed; inset:0; z-index:250; display:none; flex-direction:column;
+    background:rgba(12,18,15,.97); padding:18px 24px;}
+  #galleryOverlay.on{display:flex;}
+  .galHead{display:flex; align-items:center; gap:16px; margin-bottom:14px;}
+  .galHead h2{color:var(--gold2); letter-spacing:3px; margin:0;}
+  .galCount{font-size:14px; letter-spacing:1px; color:var(--parch); opacity:.8;}
+  .galGrid{display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start;
+    overflow-y:auto; flex:1; justify-content:center; padding:4px;}
+  /* [YENI] tur sayaci */
+  .turnTimer{padding:5px 12px; border-radius:14px; font-size:14px; letter-spacing:1px;
+    border:1px solid var(--gold); background:#000a; color:var(--gold2); min-width:64px; text-align:center;}
+  .turnTimer.warn{color:#ffcf6b; border-color:#e0a83c;}
+  .turnTimer.crit{color:#ff7a6b; border-color:#c1443a; animation:pulseT .6s infinite alternate;}
+  @keyframes pulseT{from{box-shadow:0 0 0 #c1443a00;}to{box-shadow:0 0 12px #c1443a99;}}
+  /* [YENI] sag-tik buyuk kart goruntusu */
+  #cardZoom{position:fixed; inset:0; z-index:300; display:none; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; background:rgba(6,9,7,.9);}
+  #cardZoom.on{display:flex;}
+  .zoomInner{display:flex; gap:24px; align-items:flex-start; max-width:900px; max-height:78vh;}
+  .zoomCardWrap{transform:scale(1.9); transform-origin:top center; margin:40px 60px;}
+  .zoomInfo{white-space:pre-wrap; font-size:14px; line-height:1.5; color:var(--parch);
+    background:#1a140c; border:1px solid var(--gold); border-radius:8px; padding:16px 20px;
+    max-width:440px; max-height:74vh; overflow-y:auto;}
+  .zoomInfo b{color:var(--gold2);}
 
   /* ---- 2 NAMES ---- */
   #scNames{flex-direction:column; align-items:center; justify-content:center; gap:18px;}
@@ -115,6 +144,7 @@
   #overlay h1{font-size:54px; letter-spacing:6px; color:var(--gold2);
     text-shadow:0 0 30px rgba(184,145,47,.7), 0 4px 0 #5a4514;}
   #overlay .who{font-size:22px; letter-spacing:3px;}
+  .overlayBtns{display:flex; gap:16px; flex-wrap:wrap; justify-content:center;}
   /* El: en fazla 4 kart yan yana, sonrasi alt sira */
   .row{display:flex; gap:7px; flex-wrap:wrap; flex:1; min-height:158px; align-items:flex-start;
        max-width:480px;}
@@ -125,7 +155,9 @@
   /* Arena: genis, 4 kart sonrasi alt sira (wrap) */
   .arenaRow{display:flex; gap:8px; flex-wrap:wrap; min-height:158px; justify-content:center;
             padding:5px; max-width:900px; margin:0 auto;}
-  .divider{height:2px; background:linear-gradient(90deg,transparent,#b8912f88,transparent); margin:4px 0;}
+  .divider{height:2px; background:linear-gradient(90deg,transparent,#b8912f88,transparent); margin:4px 0; flex:1;}
+  /* [YENI] Orta cizgi satiri: cizgi solda esner, END TURN en saga yaslanir (Hearthstone duzeni) */
+  .midline{display:flex; align-items:center; gap:12px; padding:0 6px;}
 
   .card{width:104px; min-height:150px; padding:7px; border-radius:7px; position:relative; cursor:pointer;
     display:flex; flex-direction:column;
@@ -145,6 +177,11 @@
     transform:rotate(-8deg);}
   .card.p2{border-color:#7a3b3b;}
   .card.tgt{outline:3px dashed #f0d97a; outline-offset:2px;}
+  /* [YENI] coklu-secimde secili hedef */
+  .card.picked{outline:3px solid #57b06e; outline-offset:2px; box-shadow:0 0 12px #57b06ecc;}
+  .card.picked::after{content:'✓'; position:absolute; top:-8px; left:-8px; width:20px; height:20px;
+    background:#57b06e; color:#08210f; border-radius:50%; font-size:13px; font-weight:bold;
+    display:flex; align-items:center; justify-content:center; border:2px solid #d9f5e2;}
   .cname{font-weight:bold; font-size:11px; margin-bottom:3px; min-height:26px;}
   .stat{display:flex; justify-content:space-between; font-size:10px;}
   .cost{position:absolute; top:-8px; left:-8px; width:22px; height:22px; border-radius:50%;
@@ -153,6 +190,10 @@
   .sickTag{position:absolute; top:-8px; right:-8px; background:#4a4a6a; color:#dfe;
     font-size:9px; padding:1px 5px; border-radius:8px; border:1px solid #222;}
   .badges{margin-top:3px; font-size:9px; color:#7a2020; min-height:11px;}
+  /* [YENI] Sureli etki (zehir/kanama/DOT) rozetleri */
+  .fxRow{display:flex; flex-wrap:wrap; gap:2px; margin-top:2px; min-height:0;}
+  .fx{font-size:8px; padding:1px 4px; border-radius:6px; white-space:nowrap;
+    background:#3a1d2e; color:#f0a6c0; border:1px solid #7a3a55;}
 
   /* --- eylem cubugu: Attack / Ability --- */
   /* Eylem cubugu: SABIT konum (alt-orta). Elemana gore konumlandirmak,
@@ -185,10 +226,16 @@
   .empty{opacity:.4; font-style:italic; font-size:12px; padding:8px; text-align:center; width:100%;}
   /* End Turn: tahtanin altinda, sagda */
   .endRow{display:flex; justify-content:flex-end; padding:2px 4px;}
-  .endBtn{font-size:15px; letter-spacing:2px; padding:10px 30px;
+  .endBtn{font-size:13px; letter-spacing:2px; padding:9px 22px; white-space:nowrap; flex:none;
     background:linear-gradient(#e0c070,#b8912f); border:2px solid var(--gold2);
     box-shadow:0 3px 10px #000a;}
   .endBtn:hover{background:linear-gradient(#f6e6a8,#d8ae3c);}
+  /* [YENI] Hedefsiz (NONE) yetenekler icin USE butonu - yetenek butonunun hemen saginda.
+     Sadece yetenek "armed" durumdayken gorunur (JS display ile acar/kapatir). */
+  .useBtn{display:none; font-size:13px; letter-spacing:1px; padding:9px 18px;
+    background:linear-gradient(#8fd6a0,#3f8f5a); border:2px solid #bff0cb; color:#0f2417;
+    box-shadow:0 0 14px #57b06e88;}
+  .useBtn:hover{background:linear-gradient(#b6f0c4,#4fae6d);}
   /* hedeflenebilir kahraman portresi */
   .hero.tgt{outline:3px dashed #f0d97a; outline-offset:3px; cursor:crosshair;}
   .harmor{position:absolute; top:-6px; right:-6px; background:#4a5b6a; color:#dff;
@@ -215,7 +262,19 @@
 <div class="screen" id="scChar">
   <h2>CHOOSE YOUR CHARACTER</h2>
   <div id="charWho">—</div>
+  <!-- [YENI] Tum kartlari (master deck) goruntuleme butonu -->
+  <button class="bigbtn ghost" id="btnViewCards">🗃 VIEW ALL CARDS</button>
   <div class="charGrid" id="charGrid"></div>
+</div>
+
+<!-- [YENI] KART GALERISI: master deck'teki tum kartlar. Yeni eklenen kartin gelip
+     gelmedigini buradan kontrol edebilirsin. -->
+<div id="galleryOverlay">
+  <div class="galHead">
+    <h2>ALL CARDS <span id="galCount" class="galCount"></span></h2>
+    <button class="bigbtn" id="btnGalClose">✕ CLOSE</button>
+  </div>
+  <div class="galGrid" id="galGrid"></div>
 </div>
 
 <div class="screen" id="scGame">
@@ -224,6 +283,8 @@
     <span class="turnBadge" id="turnBadge">—</span>
     <span class="hint" id="modeHint"></span>
     <span class="spacer"></span>
+    <!-- [YENI] Tur sayaci: her tur 20 saniye, bitince otomatik tur biter -->
+    <span id="turnTimer" class="turnTimer">⏱ 20</span>
     <span id="tour" style="color:var(--gold2)">Turn: -</span>
   </header>
   <main>
@@ -239,12 +300,18 @@
           <div class="heroMeta" id="meta2"></div>
           <div class="hero" id="hero2"><div class="hn">-</div><div class="hmana">0</div><div class="hhp">0</div><div class="harmor" id="harmor2"></div><div class="hstun" id="hstun2"></div></div>
           <div class="abilityBtn off" id="ab2"><b>✦</b><span>0</span></div>
+          <!-- [YENI] P2 icin ayni USE butonu -->
+          <button class="useBtn" id="use2">▶ USE</button>
         </div>
       </div>
 
       <div class="arena">
         <div class="arenaRow" id="arenaTop"></div>
-        <div class="divider"></div>
+        <!-- [DEGISIKLIK] Orta cizgi artik END TURN'u de tasiyor (Hearthstone gibi, en sagda) -->
+        <div class="midline">
+          <div class="divider"></div>
+          <button class="endBtn" id="btnEnd">END TURN ⏳</button>
+        </div>
         <div class="arenaRow" id="arenaBottom"></div>
       </div>
 
@@ -253,9 +320,10 @@
           <div class="heroMeta" id="meta1"></div>
           <div class="hero" id="hero1"><div class="hn">-</div><div class="hmana">0</div><div class="hhp">0</div><div class="harmor" id="harmor1"></div><div class="hstun" id="hstun1"></div></div>
           <div class="abilityBtn off" id="ab1"><b>✦</b><span>0</span></div>
+          <!-- [YENI] Hedefsiz (NONE) hero yetenekleri icin USE butonu: yetenek butonunun hemen saginda -->
+          <button class="useBtn" id="use1">▶ USE</button>
           <div class="turnBtns">
             <button class="cancelBtn" id="btnCancel">✕ CANCEL</button>
-            <button class="endBtn" id="btnEnd">END TURN ⏳</button>
             <button class="surrBtn" id="btnSurrender">🏳 SURRENDER</button>
           </div>
         </div>
@@ -284,10 +352,22 @@
 </div>
 <div id="tip"></div>
 
+<!-- [YENI] SAG TIK: kartin buyuk detayli goruntusu -->
+<div id="cardZoom">
+  <div class="zoomInner">
+    <div class="zoomCardWrap" id="zoomCardWrap"></div>
+    <div class="zoomInfo" id="zoomInfo"></div>
+  </div>
+  <button class="bigbtn" id="btnZoomClose">✕ CLOSE</button>
+</div>
+
 <div id="overlay">
   <h1>VICTORY</h1>
   <div class="who" id="winnerText">—</div>
-  <button class="bigbtn" id="btnQuit">CLOSE</button>
+  <div class="overlayBtns">
+    <button class="bigbtn ghost" id="btnMainMenu">⟲ MAIN MENU</button>
+    <button class="bigbtn" id="btnQuit">✕ QUIT GAME</button>
+  </div>
 </div>
 
 <script>
@@ -359,10 +439,62 @@ function drawCharGrid(){
     if(!taken[e.key]) d.onclick=async()=>{
       await window.chooseCharacter(charTurn,e.key); taken[e.key]=true; await pullLog(); tipOff();
       if(charTurn===1){charTurn=2; state=await fetchState(); drawCharGrid();}
-      else {await refresh(); show('scGame');}
+      else {await refresh(); show('scGame'); startTurnTimer();}   // [YENI] oyun basladi -> sayaci baslat
     };
     g.appendChild(d);
   });
+}
+
+/* ---------- HEDEF TARAFI (C++'tan gelen targetSide) ----------
+   Aktif modda hangi tarafin hedeflenebilecegini soyler:
+     'enemy' -> sadece rakip kartlar   (hasar veren yetenekler, normal saldiri)
+     'ally'  -> sadece kendi kartlarim (heal / armor / koruma / reflection)
+     'any'   -> ikisi de
+   Deger C++'tan geliyor (GuiBridge -> cardJson / characterJson icindeki "targetSide"),
+   burada sabit liste YOK; kodda bir yetenegin tarafini degistirirsen GUI otomatik uyar. */
+function abilitySide(){
+  const cur=state.currentPlayer;
+  if(mode==='attack') return 'enemy';                 // normal saldiri her zaman rakibe
+  if(mode==='heroAbility'){
+    const c=(cur===1?state.player1:state.player2).character;
+    return c ? (c.targetSide||'enemy') : 'enemy';
+  }
+  if(mode==='cardAbility' || mode==='multiAbility'){  // [YENI] coklu-secim de kartin targetSide'ini kullanir
+    const c=state.battlefield[selCard];
+    return c ? (c.targetSide||'enemy') : 'enemy';
+  }
+  return 'enemy';
+}
+/* ownerIdx (1/2) alir; hem arena kartlari hem hero kutulari icin ayni kural.
+   'none' -> hicbir sey hedeflenemez, onun yerine USE butonu cikar. */
+function canTarget(ownerIdx){
+  if(!mode) return false;
+  const side=abilitySide(), cur=state.currentPlayer;
+  if(side==='none') return false;
+  if(side==='any') return true;
+  return side==='ally' ? (ownerIdx===cur) : (ownerIdx!==cur);
+}
+/* Aktif yetenek hedefsiz mi? (alan hasari / tum takima etki) */
+function isNoTargetMode(){ return !!mode && abilitySide()==='none'; }
+
+/* ---------- COKLU HEDEF SECIMI (selectTargets kartlari) ----------
+   multiPicks: secilen kartlarin ID'leri. C++'a queueTargets ile ID gonderilir,
+   koprudeki chooser ID'yi adaydaki indekse cevirir -> DOGRU kartlar secilir. */
+let multiPicks=[], multiCount=0;
+function inMulti(){ return mode==='multiAbility'; }
+function toggleMultiPick(c){
+  const i=multiPicks.indexOf(c.id);
+  if(i>=0){ multiPicks.splice(i,1); }
+  else if(multiPicks.length<multiCount){ multiPicks.push(c.id); }
+  renderAll();
+}
+async function confirmMulti(){
+  if(!multiPicks.length){ logLine('Pick at least one target.'); return; }
+  const cur=state.currentPlayer, sc=selCard, ids=multiPicks.slice();
+  tipOff(); multiPicks=[]; multiCount=0; selCard=-1; mode=null;
+  await window.queueTargets(ids.join(','));      // secilen kart ID'leri sirasiyla kuyruga
+  await window.useCardAbility(cur, sc, -1);       // yetenek: hedefi selectTargets kuyruktan okur
+  await pullLog(); await refresh();
 }
 
 /* ---------- HEDEFE UYGULA (tek nokta) ---------- */
@@ -376,23 +508,50 @@ async function execOn(targetIdx){
   await pullLog(); await refresh();
 }
 function setMode(m){ mode=m; renderAll(); }     // mod degisince HER SEY yeniden cizilir
-function clearSel(){ selCard=-1; mode=null; renderAll(); }
+function clearSel(){ selCard=-1; mode=null; multiPicks=[]; multiCount=0; renderAll(); }
 
 /* ---------- eylem cubugu (sabit konum) ---------- */
 $('actAttack').onclick  =()=>setMode('attack');
-$('actAbility').onclick =()=>setMode('cardAbility');
+// [YENI] Ability: kart tek hedefli mi coklu mu? targetCount>1 ise coklu-secim modu.
+$('actAbility').onclick =()=>{
+  const c=state.battlefield[selCard];
+  if(c && (c.targetCount||1)>1){ multiPicks=[]; multiCount=c.targetCount; setMode('multiAbility'); }
+  else setMode('cardAbility');
+};
 $('actCancel').onclick  =clearSel;
-$('actNoTarget').onclick=async()=>{ await execOn(-1); };   // -1 = hedefsiz (AoE)
+$('actNoTarget').onclick=async()=>{ if(inMulti()) await confirmMulti(); else await execOn(-1); };
 $('btnCancel').onclick  =clearSel;
 
 function renderActionBar(){
   const bar=$('actionBar'), lbl=$('barLabel');
   const bAtk=$('actAttack'), bAb=$('actAbility'), bNT=$('actNoTarget');
   if(mode){
-    lbl.textContent = mode==='attack' ? 'Choose a TARGET to attack:'
-                   : mode==='cardAbility' ? 'Choose a TARGET for the card ability:'
-                   : 'Choose a TARGET for the hero ability:';
-    // Hedef ZORUNLU: yetenek lambda'larin target'i null kontrolsuz kullaniyor (crash olurdu).
+    // [DEGISIKLIK] Etiket artik hangi TARAFI secmen gerektigini de soyluyor (targetSide'a gore).
+    const side = abilitySide();
+    // [YENI] COKLU HEDEF: N kart secilir, sonra CONFIRM. bNT butonu "✓ CONFIRM (n/N)" olur.
+    if(mode==='multiAbility'){
+      const who = side==='ally' ? 'YOUR OWN' : 'ENEMY';
+      lbl.textContent = `Pick up to ${multiCount} ${who} cards (${multiPicks.length}/${multiCount}):`;
+      bAtk.style.display='none'; bAb.style.display='none';
+      bNT.textContent = `✓ CONFIRM (${multiPicks.length}/${multiCount})`;
+      bNT.style.display='inline-block';
+      bar.style.display='flex'; return;
+    }
+    // [YENI] NONE -> hedef sorulmaz. Cubukta sadece USE butonu kalir (hero yeteneginde
+    // USE butonu ayrica yetenek butonunun saginda da cikar).
+    if(side==='none'){
+      lbl.textContent = mode==='cardAbility'
+        ? 'Area ability — no target needed:'
+        : 'Hero area ability — no target needed:';
+      bAtk.style.display='none'; bAb.style.display='none';
+      bNT.textContent='▶ USE'; bNT.style.display='inline-block';
+      bar.style.display='flex'; return;
+    }
+    const who  = side==='ally' ? 'one of YOUR OWN' : side==='any' ? 'any' : 'an ENEMY';
+    lbl.textContent = mode==='attack' ? 'Choose an ENEMY to attack:'
+                   : mode==='cardAbility' ? `Choose ${who} target for the card ability:`
+                   : `Choose ${who} target for the hero ability:`;
+    // Hedefli yeteneklerde hedef ZORUNLU (lambda'lar target'i null kontrolsuz kullaniyor).
     bAtk.style.display='none'; bAb.style.display='none'; bNT.style.display='none';
     bar.style.display='flex'; return;
   }
@@ -447,12 +606,21 @@ function renderHero(idx,p,cur){
   if(c) attachTip(h,`<b>${c.name}</b>\n${heroDesc(heroKeyByName[c.name])}\n\n${p.name}\nHP ${c.hp}   Mana ${c.mana}   Armor ${c.armor}\n${c.stunned?'STUNNED\n':''}Ability cost ${c.abilityCost}\nCooldown ${c.cooldown} turn(s)\nEffect lasts ${c.duration} turn(s)\n\nActions left ${p.actionPoint}/3   Hero ability left ${p.abilityPoint}/1`);
 
   // Karakterler de HEDEF olabilir (Character : IDamageable)
-  // Kendi karakterin gecerli hedef degil (senin owner kuralin) -> sadece RAKIP portre isaretlenir
-  const heroIsTarget = !!mode && !!c && idx!==cur;
+  // [DEGISIKLIK] Eskiden sadece RAKIP portre isaretlenirdi. Artik kart kutulariyla ayni
+  // kural: destek yetenekleri KENDI hero'nu da hedefleyebilir (orn. First Daughter of Loras
+  // aciklamasi "cards AND the hero" diyor), hasar verenler yalnizca rakip hero'yu.
+  const heroIsTarget = !!mode && !!c && canTarget(idx);
   h.classList.toggle('tgt', heroIsTarget);
   h.onclick = async ()=>{
     if(!mode || !c) return;                 // mode CANLI okunuyor
-    if(idx===cur){ logLine('You cannot target your own character.'); return; }
+    if(!canTarget(idx)){
+      logLine(isNoTargetMode()
+        ? 'This is an area ability — no target needed, press USE.'
+        : abilitySide()==='ally'
+          ? 'This ability can only target your OWN side.'
+          : 'You cannot target your own character.');
+      return;
+    }
     await execOn(idx===1 ? -2 : -3);        // -2 = P1 karakteri, -3 = P2 karakteri
   };
 
@@ -460,8 +628,21 @@ function renderHero(idx,p,cur){
   const usable = c && cur===idx && c.ready && c.mana>=c.abilityCost && p.abilityPoint>0;
   ab.className='abilityBtn'+(usable?'':' off')+(mode==='heroAbility'&&cur===idx?' armed':'');
   ab.querySelector('span').textContent=c?c.abilityCost:'-';
-  if(c) attachTip(ab,`<b>${c.name} — Hero Ability</b>\n${heroDesc(heroKeyByName[c.name])}\n\nCost ${c.abilityCost} mana\n${c.cooldown>0?`On cooldown: ${c.cooldown} turn(s) left`:'Ready'}\nLasts ${c.duration} turn(s)\nUses left this turn: ${p.abilityPoint}/1\n\nClick, then pick any target (card or hero) — or "No Target" for area effects.`);
+  // [DEGISIKLIK] Ipucu artik yetenegin hedef tarafini da yaziyor (C++'tan gelen targetSide).
+  const side = c ? (c.targetSide||'enemy') : 'enemy';
+  const howTo = side==='none' ? 'Area effect — no target. Click, then press USE.'
+              : side==='ally' ? 'Click, then pick one of YOUR OWN cards (or your hero).'
+              : side==='any'  ? 'Click, then pick any target.'
+                              : 'Click, then pick an ENEMY card or the enemy hero.';
+  if(c) attachTip(ab,`<b>${c.name} — Hero Ability</b>\n${heroDesc(heroKeyByName[c.name])}\n\nCost ${c.abilityCost} mana\n${c.cooldown>0?`On cooldown: ${c.cooldown} turn(s) left`:'Ready'}\nLasts ${c.duration} turn(s)\nUses left this turn: ${p.abilityPoint}/1\n\n${howTo}`);
   ab.onclick=()=>{ if(!usable) return; selCard=-1; setMode('heroAbility'); };
+
+  // [YENI] USE butonu: sadece SIRASI gelen oyuncunun HEDEFSIZ (NONE) yetenegi secilmisken cikar.
+  // Yetenek butonunun hemen saginda duruyor; basinca hedefsiz (-1) olarak calistirilir.
+  const useEl = $('use'+idx);
+  const showUse = mode==='heroAbility' && cur===idx && side==='none';
+  useEl.style.display = showUse ? 'inline-block' : 'none';
+  useEl.onclick = async ()=>{ if(!showUse) return; await execOn(-1); };
 }
 
 function deckPanel(){
@@ -471,25 +652,59 @@ function deckPanel(){
   $('d2sub').textContent=state.player2.deckCount+' cards left';
 }
 
+/* ---------- kart durum/etki yardimcilari (TEK KAYNAK) ----------
+   Buff ve etkiler DOGRUDAN C++'tan gelen alanlardan okunur; burada hicbir
+   sure/hasar hesabi UYDURULMAZ (veri neyse o gosterilir). */
+function cardBuffs(c){                       // aktif durum bufflari (anlik)
+  const b=[];
+  if(c.stunned)      b.push('STUN');
+  if(c.invulnerable) b.push('IMMUNE');
+  if(c.marked)       b.push('MARKED');
+  if(c.armor>0)      b.push('ARMOR '+c.armor);
+  return b;
+}
+function cardFx(c){ return Array.isArray(c.effects) ? c.effects : []; }  // sureli etkiler (DOT)
+function targetSideText(c){
+  return c.targetSide==='none' ? 'no target (area effect) — press USE'
+       : c.targetSide==='ally' ? 'your OWN team only'
+       : c.targetSide==='any'  ? 'any side'
+                               : 'ENEMY team only';
+}
+/* Hover ipucu ve buyuk goruntu ayni metni kullanir. */
+function cardDetailText(c){
+  const buffs=cardBuffs(c), fx=cardFx(c);
+  return `${c.info}`
+    +`\nDamage range: ${c.dmgMin}–${c.dmgMax}  (base ${c.dmgMin} + random 0–${c.randMax})`
+    +(c.abilityDesc?`\n\n<b>ABILITY</b> (${c.abilityCost} mana)\n${c.abilityDesc}`:`\nAbility cost: ${c.abilityCost} mana`)
+    +`\nTargets: ${targetSideText(c)}`
+    +`\n\n<b>STATUS</b>\n`+(buffs.length?buffs.map(x=>'• '+x).join('\n'):'• (no active buffs)')
+    +`\n\n<b>ACTIVE EFFECTS</b>\n`+(fx.length
+        ? fx.map(e=>`• ${e.type}: ${e.dmg} damage, ${e.duration} turn(s) left`).join('\n')
+        : '• (none)')
+    +(c.active===false?'\n\nCannot act this turn (summoning sickness).':'');
+}
+
 function cardEl(c,extra,onField,noAp){
   const d=document.createElement('div');
   let cls='card '+(extra||''); if(c.owner===2)cls+=' p2'; if(onField&&!c.active)cls+=' sick';
   d.className=cls;
-  const b=[]; if(c.stunned)b.push('STUN'); if(c.invulnerable)b.push('IMMUNE');
-  if(c.marked)b.push('MARKED'); if(c.armor>0)b.push('ARMOR '+c.armor);
+  const b=cardBuffs(c);
+  // Sureli etkiler (C++'taki effects listesinden) - rozet olarak.
+  const fx=cardFx(c);
+  const fxHtml=fx.map(e=>`<span class="fx">☠ ${e.type} ${e.dmg}·${e.duration}t</span>`).join('');
   d.innerHTML=`<div class="cost">${c.cost}</div>${onField&&!c.active?'<div class="sickTag">💤</div>':''}
     ${noAp?'<div class="noapTag">NO ACTION</div>':''}
     <div class="cname">${c.name}</div>
     <div class="spacer"></div>
     <div class="stat"><span>HP</span><b>${c.hp}</b></div>
     <div class="stat"><span>DMG</span><b>${c.dmgMin}–${c.dmgMax}</b></div>
+    <div class="fxRow">${fxHtml}</div>
     <div class="badges">${b.join(' · ')}</div>`;
-  // HASAR ARALIGI: kartin getMaxRandomBonus() degeri (senin kodundan)
-  attachTip(d, `${c.info}`
-    +`\nDamage range: ${c.dmgMin}–${c.dmgMax}  (base ${c.dmgMin} + random 0–${c.randMax})`
-    +(c.abilityDesc?`\n\n<b>ABILITY</b> (${c.abilityCost} mana)\n${c.abilityDesc}`:`\nAbility cost: ${c.abilityCost} mana`)
-    +(onField&&!c.active?'\n\nCannot act this turn (summoning sickness).':'')
-    +(noAp?'\n\nNo action points left this turn.':''));
+  attachTip(d, cardDetailText(c)
+    +(noAp?'\n\nNo action points left this turn.':'')
+    +'\n\n(right-click for large view)');
+  // [YENI] Sag tik -> buyuk detay goruntusu
+  d.addEventListener('contextmenu', e=>{ e.preventDefault(); showCardZoom(c); });
   return d;
 }
 
@@ -517,12 +732,26 @@ function drawArena(cur){
   const outOfAp = curP.actionPoint<=0;                    // action point bitti mi
   state.battlefield.forEach((c,i)=>{
     const noAp = (c.owner===cur) && outOfAp;              // kendi kartlarim kullanilamaz
-    // Senin hit()/useUniquePower() kuralin: ayni sahibe vurulamaz -> sadece RAKIP kartlar hedef.
-    const validTarget = mode && (c.owner!==cur);
-    const el=cardEl(c,(selCard===i?'sel ':'')+(validTarget?'tgt':'')+(noAp?' noap':''),true,noAp);
+    // [DEGISIKLIK] Eskiden burada sabit "sadece RAKIP kartlar hedef" kurali vardi.
+    // Artik hedeflenebilirlik yetenegin kendi targetSide'ina gore: destek yetenekleri
+    // kendi kartlarimizi, hasar verenler rakip kartlari isaretler.
+    const validTarget = canTarget(c.owner);
+    const isPicked = inMulti() && multiPicks.includes(c.id);   // [YENI] coklu-secimde secili mi
+    const el=cardEl(c,(selCard===i?'sel ':'')+(validTarget?'tgt ':'')+(isPicked?'picked ':'')+(noAp?' noap':''),true,noAp);
     el.onclick=async()=>{
       if(mode){
-        if(c.owner===cur){ logLine('You cannot target your own team.'); return; }
+        // [DEGISIKLIK] Sabit "kendi takimini hedefleyemezsin" kilidi kaldirildi;
+        // kural yetenegin targetSide'indan geliyor (canTarget).
+        if(!canTarget(c.owner)){
+          logLine(isNoTargetMode()
+            ? 'This is an area ability — no target needed, press USE.'
+            : abilitySide()==='ally'
+              ? 'This ability can only target your OWN team.'
+              : 'This ability can only target the ENEMY team.');
+          return;
+        }
+        // [YENI] Coklu-secim: hedefe tiklamak secer/kaldirir (hemen uygulamaz).
+        if(inMulti()){ toggleMultiPick(c); return; }
         await execOn(i); return;                          // hedefleme modunda: uygula
       }
       if(c.owner!==cur){ logLine('Select your OWN card first.'); return; }
@@ -536,8 +765,37 @@ function drawArena(cur){
   if(!a1) bot.innerHTML='<div class="empty">— no cards —</div>';
 }
 
-$('btnEnd').onclick=async()=>{ tipOff(); selCard=-1; mode=null;
-  await window.endTurn(); await pullLog(); await refresh(); };
+async function doEndTurn(){
+  tipOff(); selCard=-1; mode=null;
+  await window.endTurn(); await pullLog(); await refresh();
+  startTurnTimer();                 // yeni tur -> sayaci sifirla
+}
+$('btnEnd').onclick=doEndTurn;
+
+/* ---------- TUR SAYACI (her tur 20 sn) ---------- */
+let turnTimerId=null, turnLeft=20;
+const TURN_SECONDS=30;
+function stopTurnTimer(){ if(turnTimerId){ clearInterval(turnTimerId); turnTimerId=null; } }
+function renderTurnTimer(){
+  const el=$('turnTimer'); if(!el) return;
+  el.textContent='⏱ '+turnLeft;
+  el.classList.toggle('warn', turnLeft<=15 && turnLeft>10);
+  el.classList.toggle('crit', turnLeft<=10);
+}
+function startTurnTimer(){
+  stopTurnTimer();
+  if(!state || state.gameOver){ return; }     // oyun bittiyse sayac yok
+  turnLeft=TURN_SECONDS; renderTurnTimer();
+  turnTimerId=setInterval(async()=>{
+    turnLeft--;
+    renderTurnTimer();
+    if(turnLeft<=0){
+      stopTurnTimer();
+      logLine('⏱ Time is up — turn passed automatically.');
+      await doEndTurn();                        // sure bitti -> otomatik tur biter (doEndTurn tekrar baslatir)
+    }
+  }, 1000);
+}
 
 /* ---------- teslim olma ---------- */
 $('btnSurrender').onclick=async()=>{
@@ -552,11 +810,56 @@ $('btnSurrender').onclick=async()=>{
 /* ---------- oyun sonu ---------- */
 function showGameOver(winner){
   tipOff();
+  stopTurnTimer();                 // [YENI] oyun bitti -> sayaci durdur
   $('actionBar').style.display='none';
   $('winnerText').textContent = winner + ' wins!';
   $('overlay').style.display='flex';
 }
-$('btnQuit').onclick=()=>{ $('overlay').style.display='none'; };
+
+/* ---------- SAG TIK: buyuk kart goruntusu ---------- */
+function showCardZoom(c){
+  tipOff();
+  const wrap=$('zoomCardWrap'); wrap.innerHTML='';
+  const el=cardEl(c,'',false,false);           // buyutulup gosterilecek statik kopya
+  el.style.cursor='default';
+  wrap.appendChild(el);
+  $('zoomInfo').innerHTML=cardDetailText(c);    // <b> etiketleri render olsun diye innerHTML
+  $('cardZoom').classList.add('on');
+}
+function closeCardZoom(){ $('cardZoom').classList.remove('on'); }
+$('btnZoomClose').onclick=closeCardZoom;
+$('cardZoom').addEventListener('click', e=>{ if(e.target===$('cardZoom')) closeCardZoom(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeCardZoom(); });
+// [DEGISIKLIK] Eskiden CLOSE sadece overlay'i gizliyordu, oyundan CIKMIYORDU.
+// Artik uygulamayi gercekten kapatir (C++'ta w.terminate()).
+$('btnQuit').onclick=async()=>{ try{ await window.quitApp(); }catch(e){} };
+
+// [YENI] ANA MENU: uygulamayi kapatmadan baslangic ekranina doner. Sayfayi yeniden
+// yukleyerek tum JS durumunu sifirlar; sonraki "CONTINUE" startGame'i yeniden cagirir
+// (C++ tarafi da startGame basinda eski oyunu temizliyor).
+$('btnMainMenu').onclick=()=>{ window.location.reload(); };
+
+/* ---------- KART GALERISI (tum master deck) ---------- */
+async function openGallery(){
+  let cards=[];
+  try{ cards = await window.getMasterDeck(); }catch(e){ cards=[]; }
+  if(typeof cards==='string'){ try{ cards=JSON.parse(cards); }catch(e){ cards=[]; } }
+  const grid=$('galGrid'); grid.innerHTML='';
+  $('galCount').textContent = '('+cards.length+' cards)';
+  if(!cards.length){
+    grid.innerHTML='<div class="empty">Master deck is empty — start a game first so the deck is built.</div>';
+  } else {
+    cards.forEach(c=>{
+      // Galeride kart statik: hedef/aksiyon yok, sadece goruntuleme (onField=false).
+      const el=cardEl(c,'',false,false);
+      el.style.cursor='default';
+      grid.appendChild(el);
+    });
+  }
+  $('galleryOverlay').classList.add('on');
+}
+$('btnViewCards').onclick=openGallery;
+$('btnGalClose').onclick=()=>{ tipOff(); $('galleryOverlay').classList.remove('on'); };
 </script>
 </body>
 </html>

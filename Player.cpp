@@ -64,6 +64,24 @@ void Player::hitTarget(IDamageable* target, card* usedCard){
 void Player::useCardUniqueAbility(IDamageable* target, Deck<card*>& battlefield, card* used_card,
     Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
     if(actionPoint == 0){return;}
+
+    // [YENI] Hedef tarafi kontrolu. Onceden C++ tarafinda HIC kontrol yoktu; kural sadece
+    // arayuzde duruyordu. Artik kartin kendi targetSide'i belirliyor:
+    //   ENEMY (varsayilan) -> kendi takimina kullanilamaz  (hasar veren kartlar)
+    //   ALLY               -> rakip takima kullanilamaz    (heal / armor / koruma kartlari)
+    //   NONE               -> hedefsiz (AoE); target zaten nullptr gelir, kontrol atlanir
+    if(target && used_card->getTargetSide() != TargetSide::NONE){
+        const bool sameSide = (used_card->getOwner() == target->getOwner());
+        if(used_card->getTargetSide() == TargetSide::ENEMY && sameSide){
+            std::cout << used_card->getName() << ": this ability can only target the ENEMY team." << std::endl;
+            return;
+        }
+        if(used_card->getTargetSide() == TargetSide::ALLY && !sameSide){
+            std::cout << used_card->getName() << ": this ability can only target your OWN team." << std::endl;
+            return;
+        }
+    }
+
     used_card->useUniquePower(target, battlefield, used_card, allyTeam, enemyTeam);
 
     activeCharacter->useMana(used_card->getAbilityCost());
