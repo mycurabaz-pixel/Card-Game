@@ -247,7 +247,7 @@ void gameManager::startGame() {
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Granted ice shields to an ally!" << std::endl;
             if(target != nullptr){
-            target->takeDamage(self, -10);
+            target->addArmor(10);
             }
         },
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -357,7 +357,7 @@ void gameManager::startGame() {
     ));
 
     master_deck.addCardToDeck(new fantasyCard(
-        3, card::DmgType::DARKNESS, fantasyCard::FantasyType::MAGICIAN, "Dark Mage", 6, 10, "transfusion", 12, card::DmgType::LIGHT, card::DmgType::DARKNESS, 0, 3,
+        3, card::DmgType::DARKNESS, fantasyCard::FantasyType::MAGICIAN, "Dark Mage", 6, 10, "transfusion", 12, card::DmgType::LIGHT, card::DmgType::DARKNESS, 0, 6,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Cast life drain!" << std::endl;
             if(target){
@@ -925,6 +925,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
                     c->setOwner(self->getOwner());
                     allyTeam.addCardToDeck(c);
                     enemyTeam.removeCardFromDeck(c);
+                    break;   // [DUZELTME] uzerinde donulen desteyi degistiriyoruz -> eslesince cik (iterator bozulmasin)
                 }
             }
         },
@@ -934,6 +935,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
                     c->setOwner(*origOwner);           // [DUZELTME] ESKI sahibe geri ver (no-op degil)
                     enemyTeam.addCardToDeck(c);
                     allyTeam.removeCardFromDeck(c);
+                    break;   // [DUZELTME] ayni sebep: eslesince dongudden cik
                 }
             }
         }
@@ -986,7 +988,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        3, card::DmgType::WIND, SeaSonCard::SeaSonType::ORACLE, "Stormbringer", 5, 2, "Deluge", 7, card::DmgType::MAGIC, card::DmgType::WIND, 0, 2,
+        3, card::DmgType::WIND, SeaSonCard::SeaSonType::ORACLE, "Stormbringer", 5, 2, "Storm", 7, card::DmgType::MAGIC, card::DmgType::WIND, 0, 2,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Blew a capsizing wind!" << std::endl;
             for(card* c: enemyTeam.getCards()){c->takeDamage(self, 2);}
@@ -1025,7 +1027,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
     ));
 
     master_deck.addCardToDeck(new SeaSonCard(
-        2, card::DmgType::ANTIMAGIC, SeaSonCard::SeaSonType::ORACLE, "Deepwater Guardian", 6, 6, "Deluge", 14, card::DmgType::NORMAL, card::DmgType::MAGIC, 0, 5,
+        2, card::DmgType::ANTIMAGIC, SeaSonCard::SeaSonType::ORACLE, "Deepwater Guardian", 6, 6, "Protection of the Drowns", 14, card::DmgType::NORMAL, card::DmgType::MAGIC, 0, 5,
         [](IDamageable* target, Deck<card*>& pitch, card* self, Deck<card*>& allyTeam, Deck<card*>& enemyTeam) {
             std::cout << "-> Ability: Will drown the magic shield in a vortex!" << std::endl;
             for(card* c : allyTeam.getCards()){c->addArmor(4);}
@@ -1130,7 +1132,7 @@ auto originalTarget = std::make_shared<IDamageable*>();
             "Ice Healer", "Repair Unit", "Mermaid", "Deepwater Guardian", "Glacial Savior",
             // sadece kendine buff atanlar (hedef gerekmiyor)
             "Cruel Soldier", "Barbarian", "Ember Guardian", "Pulse Guardian", "Cyber Protector",
-            "Quantum Reflector", "Bio-Mechanical Golem", "Cybernetic Ninja"
+            "Quantum Reflector", "Bio-Mechanical Golem", "Cybernetic Ninja", "Necromancer"
         };
         // --- Tek hedefli ama sadece KENDI takimina kullanilabilenler ---
         static const std::vector<std::string> ally_target_cards = {

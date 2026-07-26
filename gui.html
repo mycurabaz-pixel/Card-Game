@@ -189,7 +189,9 @@
     font-size:11px; border:2px solid #10233a;}
   .sickTag{position:absolute; top:-8px; right:-8px; background:#4a4a6a; color:#dfe;
     font-size:9px; padding:1px 5px; border-radius:8px; border:1px solid #222;}
-  .badges{margin-top:3px; font-size:9px; color:#7a2020; min-height:11px;}
+  .badges{margin-top:3px; font-size:9px; color:#7a2020; min-height:15px; display:flex; flex-wrap:wrap; gap:3px;}
+  /* [YENI] durum sembolu rozeti (stun/immune/marked/armor) - kartlarda ve karakterlerde */
+  .mk{font-size:13px; line-height:1;}
   /* [YENI] Sureli etki (zehir/kanama/DOT) rozetleri */
   .fxRow{display:flex; flex-wrap:wrap; gap:2px; margin-top:2px; min-height:0;}
   .fx{font-size:8px; padding:1px 4px; border-radius:6px; white-space:nowrap;
@@ -241,8 +243,8 @@
   .harmor{position:absolute; top:-6px; right:-6px; background:#4a5b6a; color:#dff;
     border:2px solid #22303a; border-radius:50%; width:24px; height:24px; font-size:10px;
     display:flex; align-items:center; justify-content:center;}
-  .hstun{position:absolute; top:-6px; left:-6px; background:#6a5a2a; color:#ffe9a8;
-    border:2px solid #3a3010; border-radius:8px; font-size:9px; padding:1px 5px;}
+  .hstun{position:absolute; top:-10px; left:-10px; background:#2a2410ee; color:#ffe9a8;
+    border:2px solid #3a3010; border-radius:10px; font-size:13px; line-height:1; padding:2px 5px; white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -597,13 +599,22 @@ function renderHero(idx,p,cur){
   h.querySelector('.hmana').textContent = c?c.mana:'-';
   $('harmor'+idx).textContent=(c&&c.armor>0)?c.armor:'';
   $('harmor'+idx).style.display=(c&&c.armor>0)?'flex':'none';
-  $('hstun'+idx).textContent=(c&&c.stunned)?'STUN':'';
-  $('hstun'+idx).style.display=(c&&c.stunned)?'block':'none';
+  // [YENI] Karakterde de durum sembolleri (stun/immune/marked) + sureli etki sayisi.
+  // Kartlarla AYNI yardimcilar (statusChips / cardFx) kullaniliyor -> ayni alanlar, kopya yok.
+  const hMarks = c ? statusChips(c).join('') + (cardFx(c).length?` ${SYM.effect}${cardFx(c).length}`:'') : '';
+  $('hstun'+idx).textContent = hMarks;
+  $('hstun'+idx).style.display = hMarks ? 'block' : 'none';
   // Action / Ability puanlari (senin actionPoint & abilityPoint degiskenlerin)
   $('meta'+idx).innerHTML=`<b>${p.name}</b><br>`+
     `Actions <b>${p.actionPoint}</b>/3<br>Hero ability <b>${p.abilityPoint}</b>/1`+
     (c?`<br>CD ${c.cooldown}`:'');
-  if(c) attachTip(h,`<b>${c.name}</b>\n${heroDesc(heroKeyByName[c.name])}\n\n${p.name}\nHP ${c.hp}   Mana ${c.mana}   Armor ${c.armor}\n${c.stunned?'STUNNED\n':''}Ability cost ${c.abilityCost}\nCooldown ${c.cooldown} turn(s)\nEffect lasts ${c.duration} turn(s)\n\nActions left ${p.actionPoint}/3   Hero ability left ${p.abilityPoint}/1`);
+  if(c) attachTip(h,`<b>${c.name}</b>\n${heroDesc(heroKeyByName[c.name])}\n\n${p.name}\nHP ${c.hp}   Mana ${c.mana}   Armor ${c.armor}\nAbility cost ${c.abilityCost}\nCooldown ${c.cooldown} turn(s)\nEffect lasts ${c.duration} turn(s)`
+    // [YENI] Karakterin aktif durumlari ve sureli etkileri (kartlarla ayni cardBuffs/cardFx)
+    +`\n\n<b>STATUS</b>\n`+(cardBuffs(c).length?cardBuffs(c).map(x=>'• '+x).join('\n'):'• (no active buffs)')
+    +`\n\n<b>ACTIVE EFFECTS</b>\n`+(cardFx(c).length
+        ? cardFx(c).map(e=>`• ${e.type}: ${e.dmg} damage, ${e.duration} turn(s) left`).join('\n')
+        : '• (none)')
+    +`\n\nActions left ${p.actionPoint}/3   Hero ability left ${p.abilityPoint}/1`);
 
   // Karakterler de HEDEF olabilir (Character : IDamageable)
   // [DEGISIKLIK] Eskiden sadece RAKIP portre isaretlenirdi. Artik kart kutulariyla ayni
@@ -664,6 +675,16 @@ function cardBuffs(c){                       // aktif durum bufflari (anlik)
   return b;
 }
 function cardFx(c){ return Array.isArray(c.effects) ? c.effects : []; }  // sureli etkiler (DOT)
+/* Durum sembolleri - KARTLARDA ve KARAKTERLERDE ayni (ikisi de ayni alanlari tasir).
+   C++'tan gelen stunned/invulnerable/marked alanlarindan okunur, uydurma yok. */
+const SYM = { stun:'💫', immune:'🛡', marked:'🔁', effect:'☠' };
+function statusChips(c){
+  const s=[];
+  if(c.stunned)      s.push(SYM.stun);
+  if(c.invulnerable) s.push(SYM.immune);   // immune (dokunulmazlik) isareti
+  if(c.marked)       s.push(SYM.marked);
+  return s;
+}
 function targetSideText(c){
   return c.targetSide==='none' ? 'no target (area effect) — press USE'
        : c.targetSide==='ally' ? 'your OWN team only'
@@ -688,10 +709,12 @@ function cardEl(c,extra,onField,noAp){
   const d=document.createElement('div');
   let cls='card '+(extra||''); if(c.owner===2)cls+=' p2'; if(onField&&!c.active)cls+=' sick';
   d.className=cls;
-  const b=cardBuffs(c);
+  // Durum sembolleri (stun/immune/marked) + armor
+  const chips=statusChips(c).map(x=>`<span class="mk">${x}</span>`).join('');
+  const armorTag=c.armor>0?`<span class="mk">🧱${c.armor}</span>`:'';
   // Sureli etkiler (C++'taki effects listesinden) - rozet olarak.
   const fx=cardFx(c);
-  const fxHtml=fx.map(e=>`<span class="fx">☠ ${e.type} ${e.dmg}·${e.duration}t</span>`).join('');
+  const fxHtml=fx.map(e=>`<span class="fx">${SYM.effect} ${e.type} ${e.dmg}·${e.duration}t</span>`).join('');
   d.innerHTML=`<div class="cost">${c.cost}</div>${onField&&!c.active?'<div class="sickTag">💤</div>':''}
     ${noAp?'<div class="noapTag">NO ACTION</div>':''}
     <div class="cname">${c.name}</div>
@@ -699,7 +722,7 @@ function cardEl(c,extra,onField,noAp){
     <div class="stat"><span>HP</span><b>${c.hp}</b></div>
     <div class="stat"><span>DMG</span><b>${c.dmgMin}–${c.dmgMax}</b></div>
     <div class="fxRow">${fxHtml}</div>
-    <div class="badges">${b.join(' · ')}</div>`;
+    <div class="badges">${chips}${armorTag}</div>`;
   attachTip(d, cardDetailText(c)
     +(noAp?'\n\nNo action points left this turn.':'')
     +'\n\n(right-click for large view)');
@@ -774,12 +797,12 @@ $('btnEnd').onclick=doEndTurn;
 
 /* ---------- TUR SAYACI (her tur 20 sn) ---------- */
 let turnTimerId=null, turnLeft=20;
-const TURN_SECONDS=30;
+const TURN_SECONDS=60;
 function stopTurnTimer(){ if(turnTimerId){ clearInterval(turnTimerId); turnTimerId=null; } }
 function renderTurnTimer(){
   const el=$('turnTimer'); if(!el) return;
   el.textContent='⏱ '+turnLeft;
-  el.classList.toggle('warn', turnLeft<=15 && turnLeft>10);
+  el.classList.toggle('warn', turnLeft<=30 && turnLeft>10);
   el.classList.toggle('crit', turnLeft<=10);
 }
 function startTurnTimer(){

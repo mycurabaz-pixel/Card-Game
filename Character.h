@@ -17,7 +17,7 @@ class Character : public IDamageable {
         Deck<card*>& battlefield,
         Deck<card*>& allyTeam,
         Deck<card*>& enemyTeam)>;
-        std::map<DmgType, Effect> effects;
+        std::vector<Effect> effects;
 
 
         private:
@@ -160,20 +160,14 @@ class Character : public IDamageable {
             void setOwner(Player* owner){this->owner = owner;}
 
 
-        void addEffect(DmgType hitType, Effect effect){
+        void addEffect(Effect effect){
 
-        if(hitType == NORMAL){return;}
-
-        effect.damage *= 2;
-        if(auto it = effects.find(hitType); it != effects.end()){
-        effects.at(hitType).duration += effect.duration;
-    }
-        else{
-            effects.emplace(hitType, effect);
-        }
+        if(effect.effectType == NORMAL){return;}
+        
+            effects.push_back(effect);
     }
 
-    std::map<DmgType, Effect>& getEffects(){
+    std::vector<Effect>& getEffects(){
         return effects;
     }
 

@@ -143,13 +143,14 @@ static const char* dmgTypeName(DmgType t){
     }
 }
 
-// [YENI] Kartin uzerindeki sureli etkileri (zehir/kanama/DOT) JSON dizisine cevirir.
-// Onceden GUI'ye HIC gonderilmiyordu -> arayuzde efekt gorunmuyordu.
-static std::string effectsJson(card* c){
+// [YENI] Sureli etkileri (zehir/kanama/DOT) JSON dizisine cevirir.
+// Effect vektorunu alir; hem card->getEffects() hem Character->getEffects() ayni tipi
+// dondurdugu icin AYNI fonksiyon ikisi icin de kullanilir (kopya kod yok).
+static std::string effectsJson(const std::vector<Effect>& effs){
     std::ostringstream o;
     o << "[";
     bool first = true;
-    for(const Effect& e : c->getEffects()){
+    for(const Effect& e : effs){
         if(!first) o << ",";
         first = false;
         o << "{\"type\":\"" << dmgTypeName(e.effectType) << "\""
@@ -190,7 +191,7 @@ static std::string cardJson(card* c){
       // YETENEK ACIKLAMASI: lambda'daki "-> Ability: ..." mesajindan
       << ",\"abilityDesc\":\"" << esc(abilityDescOf(c->getName())) << "\""
       // [YENI] Kartin uzerindeki sureli etkiler (zehir/kanama/DOT) -> GUI rozet olarak cizer
-      << ",\"effects\":" << effectsJson(c)
+      << ",\"effects\":" << effectsJson(c->getEffects())
       << "}";
     return o.str();
 }
@@ -222,6 +223,11 @@ static std::string characterJson(Character* ch){
       // Character'a ekledigin yeni ozellikler (armor / stun) GUI'de de gorunur:
       << ",\"armor\":"      << ch->getArmor()
       << ",\"stunned\":"    << (ch->isStunned() ? "true" : "false")
+      // [YENI] Karakterde de invulnerable(immune) / reflection isareti gorunsun (kartlarla ayni alanlar)
+      << ",\"invulnerable\":"<< (ch->isInvulnerable() ? "true" : "false")
+      << ",\"marked\":"      << (ch->isReflectionMarked() ? "true" : "false")
+      // [YENI] Karaktere de birakilan sureli etkiler (senin Character::getEffects() vektorun)
+      << ",\"effects\":"     << effectsJson(ch->getEffects())
       << "}";
     return o.str();
 }
