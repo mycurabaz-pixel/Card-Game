@@ -601,7 +601,7 @@ function renderHero(idx,p,cur){
   $('harmor'+idx).style.display=(c&&c.armor>0)?'flex':'none';
   // [YENI] Karakterde de durum sembolleri (stun/immune/marked) + sureli etki sayisi.
   // Kartlarla AYNI yardimcilar (statusChips / cardFx) kullaniliyor -> ayni alanlar, kopya yok.
-  const hMarks = c ? statusChips(c).join('') + (cardFx(c).length?` ${SYM.effect}${cardFx(c).length}`:'') : '';
+  const hMarks = c ? statusChips(c).join('') + cardFx(c).map(e=>fxIcon(e.type)).join('') : '';
   $('hstun'+idx).textContent = hMarks;
   $('hstun'+idx).style.display = hMarks ? 'block' : 'none';
   // Action / Ability puanlari (senin actionPoint & abilityPoint degiskenlerin)
@@ -672,17 +672,31 @@ function cardBuffs(c){                       // aktif durum bufflari (anlik)
   if(c.invulnerable) b.push('IMMUNE');
   if(c.marked)       b.push('MARKED');
   if(c.armor>0)      b.push('ARMOR '+c.armor);
+  if(typeof c.baseDmg==='number' && typeof c.dmg==='number'){
+    if(c.dmg < c.baseDmg)      b.push('DMG REDUCED');
+    else if(c.dmg > c.baseDmg) b.push('DMG BOOSTED');
+  }
   return b;
 }
 function cardFx(c){ return Array.isArray(c.effects) ? c.effects : []; }  // sureli etkiler (DOT)
 /* Durum sembolleri - KARTLARDA ve KARAKTERLERDE ayni (ikisi de ayni alanlari tasir).
    C++'tan gelen stunned/invulnerable/marked alanlarindan okunur, uydurma yok. */
-const SYM = { stun:'💫', immune:'🛡', marked:'🔁', effect:'☠' };
+const SYM = { stun:'💫', immune:'🛡', marked:'🔁', effect:'☠', dmgDown:'🗡️', dmgUp:'⚔️' };
+// Element (FIRE/ICE/...) etki sembolleri. Anahtarlar C++'taki dmgTypeName ciktilariyla ayni.
+const ELEM = { Fire:'🔥', Ice:'❄️', Nature:'🌿', Wind:'🌪️', Magic:'✨', Antimagic:'🚫',
+               Dark:'🌑', Light:'☀️', Slice:'🩸', Lightning:'⚡', Normal:'•' };
+function fxIcon(type){ return ELEM[type] || SYM.effect; }
 function statusChips(c){
   const s=[];
   if(c.stunned)      s.push(SYM.stun);
   if(c.invulnerable) s.push(SYM.immune);   // immune (dokunulmazlik) isareti
   if(c.marked)       s.push(SYM.marked);
+  // Hasar buff/debuff (orn. Arrival of the Throne dusmani yariya boler). Sadece kartlarda:
+  // karakterlerde baseDmg alani yok -> undefined kalir, atlanir.
+  if(typeof c.baseDmg==='number' && typeof c.dmg==='number'){
+    if(c.dmg < c.baseDmg)      s.push(SYM.dmgDown);   // hasar azaldi -> tek/kirik kilic
+    else if(c.dmg > c.baseDmg) s.push(SYM.dmgUp);     // hasar artti -> ikili kilic
+  }
   return s;
 }
 function targetSideText(c){
@@ -714,7 +728,7 @@ function cardEl(c,extra,onField,noAp){
   const armorTag=c.armor>0?`<span class="mk">🧱${c.armor}</span>`:'';
   // Sureli etkiler (C++'taki effects listesinden) - rozet olarak.
   const fx=cardFx(c);
-  const fxHtml=fx.map(e=>`<span class="fx">${SYM.effect} ${e.type} ${e.dmg}·${e.duration}t</span>`).join('');
+  const fxHtml=fx.map(e=>`<span class="fx">${fxIcon(e.type)} ${e.type} ${e.dmg}·${e.duration}t</span>`).join('');
   d.innerHTML=`<div class="cost">${c.cost}</div>${onField&&!c.active?'<div class="sickTag">💤</div>':''}
     ${noAp?'<div class="noapTag">NO ACTION</div>':''}
     <div class="cname">${c.name}</div>

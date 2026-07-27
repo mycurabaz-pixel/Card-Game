@@ -185,6 +185,8 @@ static std::string cardJson(card* c){
       << ",\"dmgMin\":"      << c->getDmgHit()
       << ",\"dmgMax\":"      << (c->getDmgHit() + c->getMaxRandomBonus())
       << ",\"randMax\":"     << c->getMaxRandomBonus()
+      // [YENI] Temel hasar -> GUI su anki hasarla kiyaslayip artmis/azalmis gosterir (kilic sembolu)
+      << ",\"baseDmg\":"     << c->getBaseDmgHit()
       // ACIKLAMA: kullanicinin kendi yazdigi getCardInfo() kullaniliyor.
       // Boylece kart metinlerini kodda degistirdiginde GUI otomatik guncellenir.
       << ",\"info\":\""      << esc(c->getCardInfo()) << "\""

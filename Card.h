@@ -31,6 +31,9 @@ class card : public IDamageable {
     std::string cardName;
     int cost;
     int dmgHit;
+    // [YENI] Kartin degistirilmemis TEMEL hasari (ctor'da bir kez ayarlanir, sabit kalir).
+    // GUI su anki dmgHit ile kiyaslayip hasar artmis/azalmis mi gosterir (kilic sembolleri).
+    int baseDmgHit;
     std::vector<Effect> effects;
     DmgType immunity;
     DmgType vulnurability;
@@ -60,6 +63,7 @@ class card : public IDamageable {
         this->cardName = cardName;
         this->cost = cost;
         this->dmgHit = dmgHit;
+        this->baseDmgHit = dmgHit;   // [YENI] temel hasari sakla (buff/debuff kiyasi icin)
         private_card_id = id_counter;
         id_counter++;
         this->health = health;
@@ -99,6 +103,8 @@ class card : public IDamageable {
     int getDmgHit(){
         return dmgHit;
     }
+
+    int getBaseDmgHit(){ return baseDmgHit; }   // [YENI] temel hasar (GUI buff/debuff kiyasi)
 
     void setDmgHit(int dmgHit){
         this->dmgHit = dmgHit;
