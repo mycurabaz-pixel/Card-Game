@@ -53,12 +53,10 @@ class Character : public IDamageable {
             ability(std::move(ability)),
             reverseAbility(std::move(reverseAbility)){}
 
-            bool tryUseAbility(IDamageable* target, Deck<card*> battlefield, Deck<card*> allyTeam, Deck<card*> enemyTeam){
+
+            bool tryUseAbility(IDamageable* target, Deck<card*>& battlefield, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
             if(currentCooldown > 0) return false;         // hazır değil
             if(!canAfford(abilityCost)) return false;     // [YENI] mana yetmiyorsa yetenek kullanilamaz
-            // [DEGISIKLIK] Eskiden burada kosulsuz "ayni sahip -> false" vardi; bu yuzden
-            // heal/koruma yetenekleri KENDI takimina hic kullanilamiyordu. Ayrica target
-            // nullptr gelirse bu satir cokuyordu. Artik kural yetenegin targetSide'ina bagli:
             //   ENEMY -> kendi tarafina kullanilamaz
             //   ALLY  -> rakip tarafa kullanilamaz
             //   NONE  -> hedefsiz (alan etkili); target beklenmez, nullptr normaldir
@@ -74,7 +72,7 @@ class Character : public IDamageable {
             return true;
             }
 
-            void revert(IDamageable* target, Deck<card*> battlefield, Deck<card*> allyTeam, Deck<card*> enemyTeam){
+            void revert(IDamageable* target, Deck<card*>& battlefield, Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
         if(reverseAbility) reverseAbility(target, battlefield, allyTeam, enemyTeam);
     }
 
@@ -87,12 +85,7 @@ class Character : public IDamageable {
             }
 
             void takeDamage(IDamageable* attacker, int damage) override{
-                // [DUZELTME] Eskiden: if(owner == attacker->getOwner()){damage = 0;}
-                //  1) attacker nullptr olabiliyor (orn. Knife Master: takeDamage(nullptr, 2),
-                //     effect tick'leri) -> nullptr->getOwner() COKUYORDU.
-                //  2) Kosul negatif hasari (= iyilestirme) da sifirliyordu, yani kendi
-                //     karakterini iyilestiren yetenekler hicbir sey yapmiyordu.
-                // Artik sadece POZITIF hasar ve gercek bir saldirgan varken dost atesi engelleniyor.
+               
                 if(attacker && damage > 0 && owner && owner == attacker->getOwner()) return;
                 if(invulnerable && damage > 0) return;
 
@@ -102,9 +95,6 @@ class Character : public IDamageable {
                     health -= damage;
                 }
                 else{
-                    // [DUZELTME] card::takeDamage ile ayni hata: buraya sadece tasan
-                    // iyilestirme dusuyor, yapilacak sey cani tavana kirpmak. Modulo
-                    // gereksizdi ve maxHealth 0 olursa sifira bolme ile cokuyordu.
                     health = maxHealth;
                 }
                 if(attacker && damage > 0 && isReflectionMarked()){ reflect(attacker, damage); }

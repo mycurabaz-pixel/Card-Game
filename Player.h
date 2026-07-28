@@ -37,9 +37,11 @@ class Player {
         yourDeck.addCardToDeck(c);
     }
 
-    std::vector<card*> getHand(){
+    std::vector<card*>& getHand(){
         return hand;
     }
+
+    void addToHand(card* c){ hand.push_back(c); }
 
     // Govdesi cout/cin veya gameManager kullandigi icin tanimlar Player.cpp'de:
     void drawCard();

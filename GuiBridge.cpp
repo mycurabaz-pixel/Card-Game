@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <deque>
+#include <stack>   // Player::graveyard (mezarlik) kopyasini gezmek icin
 
 namespace gui {
 
@@ -234,6 +235,24 @@ static std::string characterJson(Character* ch){
     return o.str();
 }
 
+// [YENI] Mezarlik: olen kartlar Player::graveyard (std::stack<card*>) icinde tutulur.
+// Stack gezilemedigi icin bir KOPYASINI alip pop ederek diziye ceviriyoruz (asil yigin
+// bozulmaz). En son olen kart dizinin BASINDA olur -> GUI en ustte gosterir.
+static std::string graveyardJson(std::stack<card*> g){   // kopya alinir (asil yigin degismez)
+    std::ostringstream o;
+    o << "[";
+    bool first = true;
+    while(!g.empty()){
+        card* c = g.top(); g.pop();
+        if(!c){ continue; }
+        if(!first) o << ",";
+        first = false;
+        o << cardJson(c);
+    }
+    o << "]";
+    return o.str();
+}
+
 static std::string playerJson(Player& p){
     std::ostringstream o;
     o << "{"
@@ -241,6 +260,7 @@ static std::string playerJson(Player& p){
       << ",\"character\":" << characterJson(p.getCharacter())
       << ",\"hand\":"      << cardListJson(p.getHand())
       << ",\"team\":"      << cardListJson(p.getTeam().getCards())
+      << ",\"graveyard\":" << graveyardJson(p.getGraveyard())
       << ",\"deckCount\":"   << p.getDeck().remaining()   // yandaki deste sayaci icin
       << ",\"actionPoint\":" << p.getActionPoint()        // tur basina 3 kart aksiyonu
       << ",\"abilityPoint\":"<< p.getAbilityPoint()       // tur basina 1 karakter yetenegi

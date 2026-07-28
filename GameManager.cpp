@@ -97,7 +97,7 @@ void gameManager::startGame() {
         auto self = std::make_shared<Character*>(nullptr);
 
         Character* ch = new Character(
-            "Princess of Kangreya", 90, 18, 5, 1, 7, [self](IDamageable* target, Deck<card*>& battlefield,
+            "Princess of Kangreya", 90, 16, 5, 1, 7, [self](IDamageable* target, Deck<card*>& battlefield,
                         Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
                             for(card* c : allyTeam.getCards()){c->setInvulnerable(true);}
                             (*self)->setInvulnerable(true); 
@@ -178,14 +178,51 @@ void gameManager::startGame() {
                         }));
     }
 
-    character_pool.emplace("Trickster", new Character("Bad Omen", 105, 15, 3, 4, 4, [](IDamageable* target, Deck<card*>& battlefield,
+    {
+        auto self = std::make_shared<Character*>(nullptr);
+
+        Character* ch = new Character("Trickster", 105, 15, 5, 0, 5, [self](IDamageable* target, Deck<card*>& battlefield,
                         Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
-                            
+                            if(card* tempTarget = dynamic_cast<card*>(target)){
+                                tempTarget->setHealth(tempTarget->getMaxHealth());
+                                tempTarget->setActive(false);
+                                (*self)->getOwner()->addToHand(tempTarget);
+                                battlefield.removeCardFromDeck(tempTarget);
+                            }
         },
     [](IDamageable* target, Deck<card*>& battlefield,
                         Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+
+    });
+
+        *self = ch;
+        character_pool.emplace("Bad Omen", ch);
+}
+
+{
+    auto self = std::make_shared<Character*>(nullptr);
+    auto sum_of_heal = std::make_shared<int*>(nullptr);
+    (*sum_of_heal) = 0;
+    auto heal = std::make_shared<int*>(nullptr);
+    (*heal) = 1;
+    auto transformed = std::make_shared<bool*>(nullptr);
+
+    Character* ch = new Character("witch...", 90, 16, 2, 2, 3, [self, sum_of_heal, transformed, heal](IDamageable* target, Deck<card*>& battlefield,
+            Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
+                                for(card* c:battlefield.getCards()){
+                                    c->addArmor((*heal));
+                                    (*sum_of_heal) += 2;
+                                }
+                    },
+    [](IDamageable* target, Deck<card*>& battlefield,
+                        Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
                             
-    }));
+                    }
+        );
+
+        (*self) = ch;
+        character_pool.emplace("Unknown girl in soldiers story", ch);
+}
 
     // ==========================================
     // [YENI] KARAKTER YETENEKLERININ HEDEF TARAFI
@@ -1176,7 +1213,6 @@ auto originalTarget = std::make_shared<IDamageable*>();
         all_cards_snapshot.push_back(c);
     }
 
-    // [DEGISIKLIK] Kart dagitma dongusu duzeltildi:
     // Onceki halde "removeTopCard()" cagrildiktan SONRA getTopCard()->setOwner(...) yapiliyordu;
     // bu yuzden owner yanlis karta atanıyor ve deste bosaldiginda nullptr->setOwner ile cokuyordu.
     for (int i = 0; i < 30; ++i) {
@@ -1227,15 +1263,12 @@ void gameManager::playTurn(){
 // Turu ilerleten, ETKILESIM ICERMEYEN kisim.
 // playTurn (konsol) ve GUI'nin "Turu Bitir" dugmesi ayni mantigi kullansin diye ayrildi.
 void gameManager::advanceTurn(){
-    // [DUZELTME] Karakter atanmamissa getCharacter() nullptr doner -> once kontrol et,
     // yoksa nullptr uzerinden setMana cagrilir ve program coker.
     if(player1.hasCharacter())
         player1.getCharacter()->setMana(player1.getCharacter()->getMana() + tour_counter + 2);
     if(player2.hasCharacter())
         player2.getCharacter()->setMana(player2.getCharacter()->getMana() + tour_counter + 2);
 
-    // [DUZELTME] Asagidaki uc satir yukaridaki if'in govdesiymis gibi girintilenmisti
-    // (-Wmisleading-indentation). Aslinda her turda calismalari gerekiyor; girinti duzeltildi.
     executeEffects();
 
     tickCharacters(); // her tur sonunda: karakter cooldown'lari azalir + suresi dolan etkiler geri alinir
@@ -1246,33 +1279,29 @@ void gameManager::advanceTurn(){
         tour_counter++;   // tam bir tur bitti
 }
 
-void gameManager::executeEffects(){
-    // [DEGISIKLIK] Ic dongude iterator hic ilerlemiyordu (sonsuz dongu) ve erase sonrasi
-    // iterator gecersizlesiyordu. Iterator artik erase'in donusuyle guvenli ilerliyor.
-    for(card* c: battle_field.getCards()){
-        auto& current_effects = c->getEffects();
-        // [DUZELTME] Onceki dongude uc ayri hata vardi:
-        //   1) 'Effect e = current_effects[i];' bir KOPYA aliyor, 'e.duration--' sadece kopyayi
-        //      azaltiyordu -> depodaki sure hic dusmuyor, etki KALICI hale geliyordu (sonsuz zehir).
-        //   2) erase(begin()+i) sonrasi i++ yapilinca erase edilenin YERINE gelen eleman atlaniyordu.
-        //   3) her tur tik atmasi gerekirken '% 2' ile sadece bazi turlarda tik atiyordu.
-        // Artik: her tur hasar uygulanir, sure depoda azalir, biten etki guvenli silinir.
-        for(size_t i = 0; i < current_effects.size(); ){
-            Effect& e = current_effects[i];   // REFERANS -> depoyu gercekten degistirir
-            c->takeDamage(nullptr, e.damage);
-            e.duration--;
-            if(e.duration <= 0){
-                current_effects.erase(current_effects.begin() + i);   // i'yi ARTIRMA (kayma)
-            } else {
-                ++i;
-            }
-        }
+
+static void tickEffectsOn(IDamageable* d){
+    auto& fx = d->getEffects();
+    for(size_t i = 0; i < fx.size(); ){
+        Effect& e = fx[i];
+        d->takeDamage(nullptr, e.damage);
+        e.duration--;
+        if(e.duration <= 0){ fx.erase(fx.begin() + i); }   // i'yi ARTIRMA
+        else               { ++i; }
     }
+}
+
+void gameManager::executeEffects(){
+    // Arenadaki kartlarin sureli etkileri
+    for(card* c: battle_field.getCards()){ tickEffectsOn(c); }
+    // ayni sablon (tickEffectsOn) -> senin Character::getEffects() vektorunu okur, kopya yok.
+    if(player1.hasCharacter()) tickEffectsOn(player1.getCharacter());
+    if(player2.hasCharacter()) tickEffectsOn(player2.getCharacter());
 }
 
 void gameManager::run() {
     int choice;
-    bool isStarted = false;   // [DUZELTME] 'true' idi -> "oyun baslatildi mi" bayragi anlamsizdi
+    bool isStarted = false;
     while (isRunning) {
         std::cout << "\n=== ANA MENU ===" << std::endl;
         std::cout << "1. Oyunculari Kaydet ve Oyunu Baslat" << std::endl;
@@ -1284,10 +1313,7 @@ void gameManager::run() {
 
         switch (choice) {
             case 1: {
-                // [DUZELTME] 'break' if'in ICINDEydi: kosul saglanmazsa case 1 sessizce
-                // case 2'ye dusuyordu (-Wimplicit-fallthrough) ve istenmeden playTurn() calisiyordu.
-                // Ayrica isStarted 'true' baslatilip 'if(isStarted)' ile kontrol ediliyordu,
-                // yani bayrak hicbir sey yapmiyordu; artik oyun bir kez baslatiliyor.
+               
                 if(!isStarted){
                     std::string n1, n2;
                     std::cout << "1. Oyuncu ismi: "; std::cin >> n1; std::cin.ignore(256, '\n');
@@ -1324,7 +1350,7 @@ void gameManager::checkTargetHealth(IDamageable* target) {
         for (card* c : deads) {
             std::cout << c->getName() << " died!" << std::endl;
             battle_field.removeCardFromDeck(c);
-            // [DEGISIKLIK] owner nullptr olabilir (orn. Turret'in sahibi yok) -> once kontrol
+
             c->getEffects().clear();
             if (c->getOwner()) c->getOwner()->getTeam().removeCardFromDeck(c);
             if(c->getOwner()) c->getOwner()->getGraveyard().push(c);
@@ -1345,8 +1371,6 @@ void gameManager::checkTargetHealth(IDamageable* target) {
 }
 
 // gameManager karaktere DOGRUDAN dokunmaz; her sey Player uzerinden gecer.
-// user  = yetenegi kullanan oyuncu (karakteri onun icinde, allyTeam = user.getTeam())
-// enemy = rakip oyuncu (enemyTeam = enemy.getTeam())
 void gameManager::useCharacterAbility(Player& user, Player& enemy, IDamageable* target){
     if(!user.hasCharacter()){
         std::cout << user.getName() << " icin secili karakter yok." << std::endl;
@@ -1374,7 +1398,6 @@ void gameManager::useCharacterAbility(Player& user, Player& enemy, IDamageable* 
     // Sureli etkiyse sadece NE ZAMAN geri alinacagini kaydet; NE geri alinacagini lambda biliyor.
     const int duration = user.getCharacterAbilityDuration();
     if(duration > 0){
-        // [DUZELTME] 'usedCard' alani hic verilmiyordu (-Wmissing-field-initializers).
         // Karakter yeteneginde kullanilan bir kart yok -> acikca nullptr yaziliyor.
         timed_abilities.push_back(TimedAbility{ &user, &enemy, tour_counter + duration, target, nullptr });
     }
@@ -1384,11 +1407,6 @@ void gameManager::useCardAbility(Player& user, Player& enemy, IDamageable* targe
     if(usedCard){
             user.useCardUniqueAbility(target, battle_field, usedCard, user.getTeam(), enemy.getTeam());
 
-            // [DUZELTME] Sureli kart etkileri HIC geri alinmiyordu: timed_card_abilities'e
-            // ekleme yoktu, tickCards da bos listeyi geziyordu. Bu yuzden kart kaynakli
-            // stun / invulnerable / vulnerability gibi bufflar KALICI olarak kaliyordu.
-            // Artik (karakter yetenegindeki gibi) sure > 0 ise geri alma zamani kaydediliyor.
-            // Geri NE alinacagini kartin kendi reversePower lambda'si biliyor (bos olabilir).
             const int duration = usedCard->getPowerDuration();
             if(duration > 0){
                 timed_card_abilities.push_back(
@@ -1405,15 +1423,9 @@ void gameManager::tickCharacters(){
     player1.tickCharacterCooldown();
     player2.tickCharacterCooldown();
 
-    // 2) Suresi dolan etkileri karakterin kendi revert lambda'si geri alir.
-    //    Lambda, apply sirasinda kaydettigi listeden calistigi icin canli takimlari
-    //    kullanmaz -> sonradan takima katilan kartlar etkilenmez. Yine de imza geregi
-    //    takimlari geciyoruz (lambda isterse kullanabilir).
     for(auto it = timed_abilities.begin(); it != timed_abilities.end(); ){
         if(tour_counter >= it->expireTurn){
-            // [DUZELTME] Cagri bozuktu: parantez erken kapaniyor, noktali virgul yok ve
-            // argumanlar yarida kalmisti. revertCharacterAbility 4 parametre bekliyor:
-            // (target, battlefield, allyTeam, enemyTeam) -> allyTeam = etkiyi kullanan oyuncunun takimi.
+
             it->source->revertCharacterAbility(it->target, battle_field,
                                                it->source->getTeam(), it->enemy->getTeam());
             it = timed_abilities.erase(it);
@@ -1439,9 +1451,6 @@ void gameManager::tickCards(){
 }
 
 void gameManager::endGame(){
-    // [DUZELTME 1] 'isRunning == false;' idi -> ATAMA degil KARSILASTIRMA. Hicbir sey yapmiyordu.
-    // [DUZELTME 2] '== 0' idi -> can eksiye dusebiliyor (takeDamage cikariyor), '<= 0' olmali.
-    // [DUZELTME 3] getCharacter() nullptr olabilir -> once kontrol, yoksa cokerdi.
     Character* c1 = player1.getCharacter();
     Character* c2 = player2.getCharacter();
     if((c1 && c1->getHealth() <= 0) || (c2 && c2->getHealth() <= 0)){

@@ -6,7 +6,7 @@ void Player::drawCard(){
     if(!yourDeck.isEmpty()){
         card* drawnCard = yourDeck.getTopCard();
 
-        hand.push_back(drawnCard);
+        addToHand(drawnCard);
 
         yourDeck.removeTopCard();
 

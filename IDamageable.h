@@ -2,6 +2,8 @@
 #define IDAMAGEABLE_H
 
 #include <string>
+#include<vector>
+#include"Effect.h"
 
 // [DUZELTME] getOwner/setOwner Player* kullaniyor ama Player burada tanimli degildi.
 // Sadece pointer tuttugumuz icin ileri bildirim yeterli (Player.h include etmiyoruz -> dongu yok).
@@ -35,6 +37,8 @@ public:
     virtual bool isInvulnerable() = 0;
     virtual Player* getOwner() = 0;
     virtual void setOwner(Player* owner) = 0;
+    virtual void addEffect(Effect effect) = 0;
+    virtual std::vector<Effect>& getEffects() = 0;
 };
 
 #endif // IDAMAGEABLE_H

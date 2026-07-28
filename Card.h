@@ -78,8 +78,6 @@ class card : public IDamageable {
         return dmgType;
     }
 
-    Effect hitEffect = {getDamageType(), 2,2,0};
-
     void setDamageType(DmgType dmgType){
         this->dmgType = dmgType;
     }
@@ -151,8 +149,14 @@ class card : public IDamageable {
         return cardName;
     }
 
+    // [DUZELTME] Eskiden 'Effect hitEffect = {getDamageType(),2,2,0};' bir UYE VARSAYILAN
+    // ilkleyicisiydi. Ama dmgType ctor GOVDESINDE atandigi icin bu ilkleyici dmgType daha
+    // COP DEGERKEN calisiyordu -> hitEffect.effectType cogunlukla 0 (=ICE) oluyordu. Bu yuzden
+    // NORMAL kartlar bile (ve yanlis ICE elementi) DOT birakiyordu. Artik efekt HER CAGRIDA
+    // GUNCEL dmgType'tan uretilir: NORMAL kart NORMAL uretir -> addEffect onu reddeder,
+    // element (Dark/Light/Fire...) ise dogru cikar. Degerler (2,2,0) senin verdigin degerler.
     Effect getHitEffect(){
-        return hitEffect;
+        return Effect{ getDamageType(), 2, 2, 0 };
     }
 
     void setOwner(Player* owner){
@@ -188,7 +192,7 @@ class card : public IDamageable {
     target->takeDamage(this, damage/3);
 }
 
-    void addEffect(Effect effect){
+    void addEffect(Effect effect) override{
 
         if(effect.effectType == NORMAL){return;}
         
@@ -200,7 +204,7 @@ class card : public IDamageable {
         }
     }
 
-    std::vector<Effect>& getEffects(){
+    std::vector<Effect>& getEffects() override{
         return effects;
     }
 
