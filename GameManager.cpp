@@ -201,18 +201,58 @@ void gameManager::startGame() {
 
 {
     auto self = std::make_shared<Character*>(nullptr);
-    auto sum_of_heal = std::make_shared<int*>(nullptr);
+    auto sum_of_heal = std::make_shared<int>();
     (*sum_of_heal) = 0;
-    auto heal = std::make_shared<int*>(nullptr);
+    auto heal = std::make_shared<int>();
     (*heal) = 1;
-    auto transformed = std::make_shared<bool*>(nullptr);
+    auto damage = std::make_shared<int>();
+    (*damage) = 1;
+    auto sum_of_damage = std::make_shared<int>();
+    (*sum_of_damage) = 0;
+    auto transformed = std::make_shared<bool>();
+    (*transformed) = false;
+    auto surpassed_threshold = std::make_shared<bool>();
+    (*surpassed_threshold) = false;
 
-    Character* ch = new Character("witch...", 90, 16, 2, 2, 3, [self, sum_of_heal, transformed, heal](IDamageable* target, Deck<card*>& battlefield,
+    Character* ch = new Character("witch...", 90, 16, 2, 2, 3, [self, sum_of_heal, transformed, heal, damage, sum_of_damage, surpassed_threshold](IDamageable* target, Deck<card*>& battlefield,
             Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
-                                for(card* c:battlefield.getCards()){
+
+
+                    if((*surpassed_threshold)){
+                        target->takeDamage((*self), (*sum_of_damage)/2);
+                        (*sum_of_damage) = 0;
+                        (*surpassed_threshold) = false;
+                        (*damage) = 1;
+                        (*self)->setTargetSide(TargetSide::NONE);
+                        return;
+                    }
+
+
+                    if(!(*transformed) && !(*surpassed_threshold)){
+                        for(card* c:allyTeam.getCards()){
                                     c->addArmor((*heal));
-                                    (*sum_of_heal) += 2;
+                                    (*sum_of_heal) += (*heal);
                                 }
+                                (*heal)++;
+                    }
+
+                    if((*transformed) && !(*surpassed_threshold)){
+                        for(card* c : enemyTeam.getCards()){
+                            c->takeDamage((*self), (*damage));
+                            (*sum_of_damage)+= (*damage);
+                        }
+                        (*damage)++;
+                    }
+
+                    if((*sum_of_heal) >= 40){
+                        (*transformed) = true;
+                        (*sum_of_heal) = 0;
+                    }
+                    if((*sum_of_damage) >= 40){
+                        (*self)->setTargetSide(TargetSide::ENEMY);
+                        (*surpassed_threshold) = true;
+                        return;
+                    }
                     },
     [](IDamageable* target, Deck<card*>& battlefield,
                         Deck<card*>& allyTeam, Deck<card*>& enemyTeam){
@@ -221,7 +261,7 @@ void gameManager::startGame() {
         );
 
         (*self) = ch;
-        character_pool.emplace("Unknown girl in soldiers story", ch);
+        character_pool.emplace("Unknown girl in soldiers stories", ch);
 }
 
     // ==========================================
@@ -235,6 +275,7 @@ void gameManager::startGame() {
     character_pool.at("First Daughter of Loras") ->setTargetSide(TargetSide::NONE); // tum takimi + kendini dokunulmaz yapar
     character_pool.at("Queen of Kangreya")       ->setTargetSide(TargetSide::NONE); // tum rakip kartlari sersemletir
     character_pool.at("Blessed of the Twins")    ->setTargetSide(TargetSide::ALLY); // Octopus: dost karta reflection isareti
+    character_pool.at("Unknown girl in soldiers stories")->setTargetSide(TargetSide::NONE);
     // "Knife Master" -> varsayilan ENEMY (tek hedefe bicak atar)
 
     // ==========================================
@@ -1394,6 +1435,8 @@ void gameManager::useCharacterAbility(Player& user, Player& enemy, IDamageable* 
             std::cout << user.getName() << ": hero ability unavailable." << std::endl;
         return;
     }
+
+    checkTargetHealth(nullptr);
 
     // Sureli etkiyse sadece NE ZAMAN geri alinacagini kaydet; NE geri alinacagini lambda biliyor.
     const int duration = user.getCharacterAbilityDuration();
